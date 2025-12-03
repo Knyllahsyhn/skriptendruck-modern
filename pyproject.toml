@@ -1,0 +1,65 @@
+[tool.poetry]
+name = "skriptendruck"
+version = "2.0.0"
+description = "Modernisiertes Skriptendruckprogramm für die Fachschaft"
+authors = ["Your Name <your.email@example.com>"]
+readme = "README.md"
+packages = [{include = "skriptendruck", from = "src"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+# Core dependencies
+pydantic = "^2.9"
+pydantic-settings = "^2.6"
+# PDF processing
+pypdf = "^5.1"
+reportlab = "^4.2"  # Für Deckblatterstellung
+# LDAP (Windows-kompatibel!)
+ldap3 = "^2.9"
+# Database
+sqlalchemy = "^2.0"
+alembic = "^1.13"  # Für DB-Migrationen
+# Excel
+openpyxl = "^3.1"
+xlsxwriter = "^3.2"  # Für Excel-Export
+# CLI
+typer = {extras = ["all"], version = "^0.12"}
+rich = "^13.9"
+# Utilities
+python-dotenv = "^1.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3"
+pytest-cov = "^6.0"
+pytest-mock = "^3.14"
+black = "^24.10"
+ruff = "^0.7"
+mypy = "^1.13"
+
+[tool.poetry.scripts]
+skriptendruck = "skriptendruck.__main__:main"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+line-length = 100
+target-version = ['py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=src/skriptendruck --cov-report=term-missing"

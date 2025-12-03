@@ -1,0 +1,15 @@
+{
+  "binding_sizes": [
+    {"min_pages": 1, "max_pages": 80, "size_mm": 8, "binding_type": "small"},
+    {"min_pages": 81, "max_pages": 120, "size_mm": 10, "binding_type": "small"},
+    {"min_pages": 121, "max_pages": 160, "size_mm": 12, "binding_type": "small"},
+    {"min_pages": 161, "max_pages": 200, "size_mm": 14, "binding_type": "small"},
+    {"min_pages": 201, "max_pages": 240, "size_mm": 16, "binding_type": "small"},
+    {"min_pages": 241, "max_pages": 280, "size_mm": 19, "binding_type": "small"},
+    {"min_pages": 281, "max_pages": 320, "size_mm": 22, "binding_type": "small"},
+    {"min_pages": 321, "max_pages": 400, "size_mm": 25, "binding_type": "large"},
+    {"min_pages": 401, "max_pages": 480, "size_mm": 28, "binding_type": "large"},
+    {"min_pages": 481, "max_pages": 600, "size_mm": 32, "binding_type": "large"}
+  ],
+  "_comment": "Ringbindungsgrößen-Tabelle. Diese Werte sind Beispiele!"
+}
