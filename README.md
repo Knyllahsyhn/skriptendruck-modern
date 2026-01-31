@@ -278,12 +278,12 @@ Siehe [docs/migration_notes.md](docs/migration_notes.md) für Details zur Migrat
 
 ## 📝 Lizenz
 
-[Deine Lizenz hier einfügen]
+GPLV3
 
 ## 👥 Autoren
 
 - Original MATLAB Version: Sebastian Müllner
-- Python Modernisierung: [Dein Name]
+- Python Modernisierung: Johannes Müller
 
 ## 🙏 Danksagungen
 
