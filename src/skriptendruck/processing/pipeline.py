@@ -82,9 +82,17 @@ class OrderPipeline:
             processed = self._process_sequential(orders, work_dir)
         
         # Dateien in Ordnerstruktur organisieren
+        logger.warning(
+            f"=== ORGANIZE CHECK: organize_files={organize_files}, "
+            f"processed={len(processed)} orders ==="
+        )
         if organize_files:
+            logger.warning("=== STARTE ORGANIZE ===")
             self._organize_files(processed)
-
+            logger.warning("=== ORGANIZE FERTIG ===")
+        else:
+            logger.warning("=== ORGANIZE ÜBERSPRUNGEN (no_organize flag) ===")
+        
         # In Datenbank speichern
         if save_to_db:
             self._save_to_database(processed)
