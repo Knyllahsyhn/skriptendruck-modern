@@ -158,7 +158,7 @@ def main() -> None:
     print()
     if conn.entries:
         for i, entry in enumerate(conn.entries):
-            print(f"  --- Eintrag {i + 1} ---")
+            print(f"  --- Eintrag {i+1} ---")
             print(f"  DN: {entry.entry_dn}")
             for attr_name in ATTRIBUTES:
                 try:
