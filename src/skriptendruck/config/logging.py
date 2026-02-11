@@ -7,6 +7,9 @@ from typing import Optional
 from rich.console import Console
 from rich.logging import RichHandler
 
+# Flag um doppelte Handler zu vermeiden
+_logging_configured = False
+
 
 def setup_logging(
     level: str = "INFO",
@@ -15,17 +18,14 @@ def setup_logging(
 ) -> logging.Logger:
     """
     Konfiguriert das Logging mit optionaler Datei-Ausgabe und Rich-Formatierung.
-    
-    Args:
-        level: Logging Level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-        log_file: Optionaler Pfad zur Log-Datei
-        use_rich: Rich Handler für schöne Console-Ausgabe verwenden
-        
-    Returns:
-        Konfigurierter Logger
     """
-    # Root Logger konfigurieren
+    global _logging_configured
+    
     logger = logging.getLogger("skriptendruck")
+
+    # Vorhandene Handler entfernen um Duplikate zu vermeiden
+    logger.handlers.clear()
+    
     logger.setLevel(getattr(logging, level.upper()))
     
     # Formatter
@@ -55,12 +55,22 @@ def setup_logging(
         log_file.parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(log_file, encoding="utf-8")
         file_handler.setFormatter(file_formatter)
-        file_handler.setLevel(logging.DEBUG)  # Immer alle Details in Datei
+        file_handler.setLevel(logging.DEBUG)
         logger.addHandler(file_handler)
-    
+
+    # Propagation verhindern (sonst geht's an root logger)
+    logger.propagate = False
+
+    _logging_configured = True
     return logger
 
 
 def get_logger(name: str) -> logging.Logger:
     """Gibt einen Logger für ein spezifisches Modul zurück."""
+    global _logging_configured
+
+    # Beim ersten Aufruf: Default-Logging einrichten wenn noch nicht geschehen
+    if not _logging_configured:
+        setup_logging(level="INFO")
+    
     return logging.getLogger(f"skriptendruck.{name}")
