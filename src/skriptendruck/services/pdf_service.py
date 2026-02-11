@@ -109,8 +109,8 @@ class PdfService:
             output_path.parent.mkdir(parents=True, exist_ok=True)
             
             # Thumbnail der ersten Seite rendern
-            if order.filepath and order.filepath.exists():
-                thumbnail_path = self._render_page_thumbnail(order.filepath)
+           # if order.filepath and order.filepath.exists():
+                #thumbnail_path = self._render_page_thumbnail(order.filepath)
             
             # Canvas erstellen
             c = canvas.Canvas(str(output_path), pagesize=A4)
