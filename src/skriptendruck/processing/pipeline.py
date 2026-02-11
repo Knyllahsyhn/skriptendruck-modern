@@ -1,5 +1,6 @@
 """Verarbeitungs-Pipeline für Druckaufträge."""
 import os
+import shutil
 import tempfile
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
@@ -7,7 +8,7 @@ from typing import List, Optional
 
 from ..config import get_logger, settings
 from ..database.service import DatabaseService
-from ..models import BindingType, Order, OrderStatus
+from ..models import BindingType, ColorMode, Order, OrderStatus
 from ..services import FilenameParser, PdfService, PricingService, UserService
 from ..services.file_organizer import FileOrganizer
 
@@ -68,16 +69,12 @@ class OrderPipeline:
     def process_orders(
         self,
         orders: List[Order],
-        output_dir: Optional[Path] = None,
         save_to_db: bool = True,
         organize_files: bool = True,
     ) -> List[Order]:
         # Temporäres Arbeitsverzeichnis für Deckblätter und Merge
-        if output_dir is None:
-            work_dir = Path(tempfile.mkdtemp(prefix="skriptendruck_"))
-        else:
-            work_dir = output_dir
-            work_dir.mkdir(parents=True, exist_ok=True)
+        work_dir = Path(tempfile.mkdtemp(prefix="skriptendruck_"))
+        logger.info(f"Arbeitsverzeichnis: {work_dir}")
         
         if settings.parallel_processing and len(orders) > 1:
             processed = self._process_parallel(orders, work_dir)
@@ -86,24 +83,100 @@ class OrderPipeline:
         
         # Dateien in Ordnerstruktur organisieren
         if organize_files:
-            try:
-                self.file_organizer.organize_batch(processed)
-                logger.info("Dateien in Ordnerstruktur organisiert")
-            except Exception as e:
-                logger.error(f"Fehler beim Organisieren der Dateien: {e}")
-        
+            self._organize_files(processed)
+
         # In Datenbank speichern
         if save_to_db:
-            try:
-                self.db_service.save_orders_batch(processed)
-                for order in processed:
-                    if order.status == OrderStatus.PROCESSED:
-                        self.db_service.create_billing_record(order)
-                logger.info(f"{len(processed)} Aufträge in Datenbank gespeichert")
-            except Exception as e:
-                logger.error(f"Fehler beim Speichern in Datenbank: {e}")
-        
+            self._save_to_database(processed)
+
+        # Temp-Verzeichnis aufräumen
+        self._cleanup_work_dir(work_dir)
+
         return processed
+
+    def _organize_files(self, processed: List[Order]) -> None:
+        """Organisiert verarbeitete Dateien in die Ordnerstruktur."""
+        successful = [o for o in processed if o.status == OrderStatus.PROCESSED]
+        errors = [o for o in processed if o.is_error]
+        logger.info(
+            f"Organisiere {len(processed)} Aufträge "
+            f"({len(successful)} erfolgreich, {len(errors)} fehlerhaft)"
+        )
+
+        # Prüfe ob merged PDFs vorhanden sind
+        for order in successful:
+            if order.merged_pdf_path:
+                exists = order.merged_pdf_path.exists()
+                logger.info(
+                    f"  Order #{order.order_id}: merged_pdf={order.merged_pdf_path.name} "
+                    f"(exists={exists})"
+                )
+                if not exists:
+                    logger.error(
+                        f"  FEHLER: merged PDF nicht gefunden: {order.merged_pdf_path}"
+                    )
+            else:
+                logger.warning(f"  Order #{order.order_id}: KEIN merged_pdf_path gesetzt!")
+
+        try:
+            self.file_organizer.organize_batch(processed)
+            logger.info("Dateien erfolgreich in Ordnerstruktur organisiert")
+
+            # Ergebnis prüfen
+            for order in successful:
+                if order.merged_pdf_path and order.merged_pdf_path.exists():
+                    logger.info(f"  ✓ Order #{order.order_id} → {order.merged_pdf_path}")
+                elif order.merged_pdf_path:
+                    logger.error(
+                        f"  ✗ Order #{order.order_id}: Datei fehlt nach organize: "
+                        f"{order.merged_pdf_path}"
+                    )
+        except Exception as e:
+            logger.error(f"Fehler beim Organisieren der Dateien: {e}")
+            # Fallback: versuche wenigstens die merged PDFs zu retten
+            self._fallback_copy_results(successful)
+
+    def _fallback_copy_results(self, successful: List[Order]) -> None:
+        """Fallback: kopiert merged PDFs direkt nach Druckfertig wenn organize fehlschlägt."""
+        logger.warning("Fallback: Kopiere merged PDFs direkt nach 02_Druckfertig")
+        for order in successful:
+            if order.merged_pdf_path and order.merged_pdf_path.exists():
+                try:
+                    target_dir = self.file_organizer.get_print_dir(
+                        order.color_mode or ColorMode.BLACK_WHITE
+                    )
+                    target_dir.mkdir(parents=True, exist_ok=True)
+                    target = target_dir / order.merged_pdf_path.name
+                    shutil.copy2(str(order.merged_pdf_path), str(target))
+                    logger.info(f"  Fallback: {order.filename} → {target}")
+                    order.merged_pdf_path = target
+                except Exception as e2:
+                    logger.error(f"  Fallback fehlgeschlagen für {order.filename}: {e2}")
+
+    def _save_to_database(self, processed: List[Order]) -> None:
+        """Speichert Aufträge in der Datenbank."""
+        try:
+            self.db_service.save_orders_batch(processed)
+            for order in processed:
+                if order.status == OrderStatus.PROCESSED:
+                    self.db_service.create_billing_record(order)
+            logger.info(f"{len(processed)} Aufträge in Datenbank gespeichert")
+        except Exception as e:
+            logger.error(f"Fehler beim Speichern in Datenbank: {e}")
+
+    def _cleanup_work_dir(self, work_dir: Path) -> None:
+        """Räumt das temporäre Arbeitsverzeichnis auf."""
+        try:
+            remaining = list(work_dir.iterdir())
+            if remaining:
+                names = [f.name for f in remaining[:5]]
+                logger.info(
+                    f"Temp aufräumen: {len(remaining)} Dateien "
+                    f"({', '.join(names)}{'...' if len(remaining) > 5 else ''})"
+                )
+            shutil.rmtree(str(work_dir), ignore_errors=True)
+        except Exception as e:
+            logger.warning(f"Temp-Verzeichnis konnte nicht gelöscht werden: {e}")
 
     def _process_sequential(self, orders: List[Order], output_dir: Path) -> List[Order]:
         logger.info(f"Verarbeite {len(orders)} Aufträge sequenziell")

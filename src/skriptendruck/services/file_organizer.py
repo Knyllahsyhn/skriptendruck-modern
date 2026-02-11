@@ -7,7 +7,7 @@ Backups der Originaldateien.
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from ..config import get_logger, settings
 from ..models import ColorMode, Order, OrderStatus
@@ -59,6 +59,7 @@ class FileOrganizer:
 
     def __init__(self, base_path: Optional[Path] = None) -> None:
         self.base_path = base_path or settings.base_path
+        logger.info(f"FileOrganizer base_path: {self.base_path}")
 
     def ensure_directory_structure(self) -> None:
         """Erstellt die komplette Ordnerstruktur."""
@@ -99,23 +100,52 @@ class FileOrganizer:
         return self.base_path / self.DIR_MANUAL
 
     def move_successful_order(self, order: Order) -> Optional[Path]:
-        if not order.merged_pdf_path or not order.merged_pdf_path.exists():
-            logger.error(f"Order #{order.order_id}: Kein merged PDF vorhanden")
+        """Verschiebt ein erfolgreich verarbeitetes PDF nach 02_Druckfertig/."""
+        if not order.merged_pdf_path:
+            logger.error(f"Order #{order.order_id}: merged_pdf_path ist None")
             return None
+
+        if not order.merged_pdf_path.exists():
+            logger.error(
+                f"Order #{order.order_id}: merged PDF nicht gefunden: "
+                f"{order.merged_pdf_path}"
+            )
+            return None
+
         try:
             color_mode = order.color_mode or ColorMode.BLACK_WHITE
             target_dir = self.get_print_dir(color_mode)
             target_dir.mkdir(parents=True, exist_ok=True)
             target_name = f"{order.order_id:04d}_{order.filename}"
             target_path = target_dir / target_name
-            shutil.move(str(order.merged_pdf_path), str(target_path))
-            logger.info(f"Order #{order.order_id} → {target_path}")
-            return target_path
+
+            logger.info(
+                f"Verschiebe Order #{order.order_id}: "
+                f"{order.merged_pdf_path} → {target_path}"
+            )
+
+            # Kopieren statt move - sicherer bei Cross-Device (temp → Netzlaufwerk)
+            shutil.copy2(str(order.merged_pdf_path), str(target_path))
+
+            # Prüfen ob Kopie erfolgreich
+            if target_path.exists():
+                # Original im temp löschen
+                try:
+                    order.merged_pdf_path.unlink()
+                except Exception:
+                    pass  # Nicht kritisch
+                logger.info(f"Order #{order.order_id} → {target_path}")
+                return target_path
+            else:
+                logger.error(f"Order #{order.order_id}: Kopie fehlgeschlagen!")
+                return None
+                
         except Exception as e:
             logger.error(f"Fehler beim Verschieben von Order #{order.order_id}: {e}")
             return None
 
     def move_failed_order(self, order: Order) -> Optional[Path]:
+        """Kopiert ein fehlerhaftes PDF nach 04_Fehler/."""
         if not order.filepath or not order.filepath.exists():
             logger.warning(f"Order #{order.order_id}: Quelldatei nicht mehr vorhanden")
             return None
@@ -128,11 +158,13 @@ class FileOrganizer:
             logger.info(f"Order #{order.order_id} (Fehler) → {target_path}")
             return target_path
         except Exception as e:
-            logger.error(f"Fehler beim Verschieben von Order #{order.order_id}: {e}")
+            logger.error(f"Fehler beim Kopieren von Order #{order.order_id}: {e}")
             return None
 
     def backup_original(self, order: Order, batch_dir: Path) -> Optional[Path]:
+        """Erstellt ein Backup der Originaldatei in 03_Originale/."""
         if not order.filepath or not order.filepath.exists():
+            logger.warning(f"Order #{order.order_id}: Original nicht gefunden: {order.filepath}")
             return None
         try:
             batch_dir.mkdir(parents=True, exist_ok=True)
@@ -145,6 +177,7 @@ class FileOrganizer:
             return None
 
     def cleanup_input(self, order: Order) -> bool:
+        """Löscht die Originaldatei aus 01_Auftraege/."""
         if not order.filepath or not order.filepath.exists():
             return True
         try:
@@ -156,25 +189,46 @@ class FileOrganizer:
             return False
 
     def organize_order(self, order: Order, batch_dir: Path) -> None:
+        """Organisiert einen einzelnen Auftrag."""
+        logger.info(
+            f"Organisiere Order #{order.order_id}: status={order.status.value}, "
+            f"merged_pdf={order.merged_pdf_path}"
+        )
+
+        # 1. Backup des Originals
         self.backup_original(order, batch_dir)
+
+        # 2. Verschieben je nach Status
         if order.status == OrderStatus.PROCESSED:
             new_path = self.move_successful_order(order)
             if new_path:
                 order.merged_pdf_path = new_path
+                logger.info(f"Order #{order.order_id}: erfolgreich nach {new_path}")
+            else:
+                logger.error(f"Order #{order.order_id}: Verschieben fehlgeschlagen!")
         elif order.is_error:
             self.move_failed_order(order)
+
+        # 3. Original aus Auftraege löschen
         self.cleanup_input(order)
 
-    def organize_batch(self, orders: list[Order]) -> None:
+    def organize_batch(self, orders: List[Order]) -> None:
+        """Organisiert eine Batch von Aufträgen in die Ordnerstruktur."""
         if not orders:
             return
+
+        logger.info(f"organize_batch: {len(orders)} Aufträge, base_path={self.base_path}")
+        
         self.ensure_directory_structure()
         batch_dir = self.get_originals_batch_dir()
+        logger.info(f"Backup-Verzeichnis: {batch_dir}")
+        
         for order in orders:
             try:
                 self.organize_order(order, batch_dir)
             except Exception as e:
                 logger.error(f"Fehler beim Organisieren von Order #{order.order_id}: {e}")
+
         # Deckblatt-Einzeldateien aufräumen
         for order in orders:
             if order.coversheet_path and order.coversheet_path.exists():
@@ -182,4 +236,5 @@ class FileOrganizer:
                     order.coversheet_path.unlink()
                 except Exception:
                     pass
+
         logger.info(f"Batch organisiert: {len(orders)} Aufträge")
