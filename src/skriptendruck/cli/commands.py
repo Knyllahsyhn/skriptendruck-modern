@@ -97,7 +97,7 @@ def process(
         )
         processed_orders = pipeline.process_orders(
             orders,
-            organize_files=not no_organize,
+            organize_files=no_organize,
         )
         progress.update(task, completed=len(orders))
 

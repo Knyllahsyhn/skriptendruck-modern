@@ -119,7 +119,7 @@ class FileOrganizer:
             target_name = f"{order.order_id:04d}_{order.filename}"
             target_path = target_dir / target_name
 
-            logger.info(
+            logger.debug(
                 f"Verschiebe Order #{order.order_id}: "
                 f"{order.merged_pdf_path} → {target_path}"
             )
@@ -134,7 +134,7 @@ class FileOrganizer:
                     order.merged_pdf_path.unlink()
                 except Exception:
                     pass  # Nicht kritisch
-                logger.info(f"Order #{order.order_id} → {target_path}")
+                logger.debug(f"Order #{order.order_id} → {target_path}")
                 return target_path
             else:
                 logger.error(f"Order #{order.order_id}: Kopie fehlgeschlagen!")
@@ -203,7 +203,7 @@ class FileOrganizer:
             new_path = self.move_successful_order(order)
             if new_path:
                 order.merged_pdf_path = new_path
-                logger.info(f"Order #{order.order_id}: erfolgreich nach {new_path}")
+                logger.debug(f"Order #{order.order_id}: erfolgreich nach {new_path}")
             else:
                 logger.error(f"Order #{order.order_id}: Verschieben fehlgeschlagen!")
         elif order.is_error:
@@ -217,7 +217,7 @@ class FileOrganizer:
         if not orders:
             return
 
-        logger.info(f"organize_batch: {len(orders)} Aufträge, base_path={self.base_path}")
+        logger.debug(f"organize_batch: {len(orders)} Aufträge, base_path={self.base_path}")
         
         self.ensure_directory_structure()
         batch_dir = self.get_originals_batch_dir()
@@ -237,4 +237,4 @@ class FileOrganizer:
                 except Exception:
                     pass
 
-        logger.info(f"Batch organisiert: {len(orders)} Aufträge")
+        logger.debug(f"Batch organisiert: {len(orders)} Aufträge")
