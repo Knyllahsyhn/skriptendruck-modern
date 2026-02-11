@@ -5,7 +5,7 @@ Unterstützt .env Dateien und Umgebungsvariablen.
 from pathlib import Path
 from typing import Optional
 
-from pydantic import Field, field_validator
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -21,10 +21,8 @@ class Settings(BaseSettings):
     # Pfade
     base_path: Path = Field(
         default=Path("H:/stud/fsmb/03_Dienste/01_Skriptendruck"),
-        description="Basispfad für alle Verzeichnisse"
+        description="Basispfad für Ordnerstruktur (01_Auftraege, 02_Druckfertig, etc.)"
     )
-    orders_path: Path = Field(default=Path("01_Auftraege"), description="Auftragsverzeichnis")
-    output_path: Path = Field(default=Path("output"), description="Ausgabeverzeichnis")
     
     # LDAP Konfiguration
     ldap_enabled: bool = Field(default=False, description="LDAP Authentifizierung aktiviert")
@@ -74,13 +72,9 @@ class Settings(BaseSettings):
     )
     
     # Excel Export
-    excel_abrechnungsliste: Path = Field(
-        default=Path("Abrechnungsliste.xlsx"),
-        description="Abrechnungsliste"
-    )
-    excel_auftragsliste: Path = Field(
-        default=Path("Auftragsliste.xlsx"),
-        description="Auftragsliste"
+    excel_export_path: Path = Field(
+        default=Path("H:/stud/fsmb/03_Dienste/01_Skriptendruck/Export"),
+        description="Verzeichnis für Excel-Exporte (Abrechnungs-/Auftragslisten)"
     )
     
     # Datenbank
@@ -107,29 +101,10 @@ class Settings(BaseSettings):
     log_level: str = Field(default="INFO", description="Logging Level")
     log_file: Optional[Path] = Field(default=None, description="Logdatei (optional)")
     
-    @field_validator("orders_path", "output_path", mode="before")
-    @classmethod
-    def resolve_relative_paths(cls, v: Path, info: dict) -> Path:
-        """Relative Pfade relativ zum base_path auflösen."""
-        if isinstance(v, str):
-            v = Path(v)
-        if not v.is_absolute():
-            # base_path aus dem values dict holen wenn verfügbar
-            base = info.data.get("base_path", Path("."))
-            return base / v
-        return v
-    
-    def get_orders_directory(self) -> Path:
-        """Gibt das vollständige Auftragsverzeichnis zurück."""
-        if self.orders_path.is_absolute():
-            return self.orders_path
-        return self.base_path / self.orders_path
-    
-    def get_output_directory(self) -> Path:
-        """Gibt das vollständige Ausgabeverzeichnis zurück."""
-        if self.output_path.is_absolute():
-            return self.output_path
-        return self.base_path / self.output_path
+    def get_excel_export_directory(self) -> Path:
+        """Gibt das Excel-Export-Verzeichnis zurück, erstellt es bei Bedarf."""
+        self.excel_export_path.mkdir(parents=True, exist_ok=True)
+        return self.excel_export_path
 
 
 # Globale Settings-Instanz

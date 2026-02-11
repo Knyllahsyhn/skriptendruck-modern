@@ -38,11 +38,11 @@ def process(
         "--sequential",
         help="Sequenzielle statt parallele Verarbeitung"
     ),
-        no_organize: bool = typer.Option(
-            False,
-            "--no-organize",
-            help="Dateien nicht in Ordnerstruktur verschieben"
-        ),
+    no_organize: bool = typer.Option(
+        False,
+        "--no-organize",
+        help="Dateien nicht in Ordnerstruktur verschieben"
+    ),
     verbose: bool = typer.Option(
         False,
         "--verbose",
@@ -119,12 +119,12 @@ def process(
 
 @app.command()
 def init(
-        base_path: Optional[Path] = typer.Option(
-            None,
-            "--base-path",
-            "-p",
-            help="Basispfad für die Ordnerstruktur"
-        ),
+    base_path: Optional[Path] = typer.Option(
+        None,
+        "--base-path",
+        "-p",
+        help="Basispfad für die Ordnerstruktur"
+    ),
 ) -> None:
     """
     Initialisiert die Ordnerstruktur und Beispieldaten.
@@ -274,7 +274,7 @@ def export_excel(
     """
     console.print(f"\n[bold blue]Excel-Export[/bold blue]\n")
 
-    output_dir = output_dir or settings.get_output_directory()
+    output_dir = output_dir or settings.get_excel_export_directory()
     output_dir.mkdir(parents=True, exist_ok=True)
 
     db_service = DatabaseService()

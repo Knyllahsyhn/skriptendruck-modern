@@ -44,7 +44,7 @@ class PdfService:
         except Exception as e:
             logger.error(f"Fehler beim Lesen des PDFs {pdf_path}: {e}")
             return None, False
-
+    
     def _render_page_thumbnail(self, pdf_path: Path, page_index: int = 0) -> Optional[str]:
         """
         Rendert eine einzelne PDF-Seite als Bild-Datei (PNG) für die Thumbnail-Vorschau.
@@ -61,26 +61,26 @@ class PdfService:
         """
         try:
             import fitz  # PyMuPDF
-
+            
             doc = fitz.open(str(pdf_path))
             if len(doc) == 0:
                 doc.close()
                 return None
-
+            
             page = doc[page_index]
-
+            
             # Render mit 1.5x Zoom für gute Qualität bei Thumbnail-Größe
             mat = fitz.Matrix(1.5, 1.5)
             pix = page.get_pixmap(matrix=mat)
-
+            
             # Temporäre PNG-Datei erstellen
             tmp = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
             pix.save(tmp.name)
-
+            
             doc.close()
             logger.debug(f"Thumbnail erstellt: {tmp.name}")
             return tmp.name
-
+            
         except ImportError:
             logger.debug("PyMuPDF (fitz) nicht verfügbar – Thumbnail wird übersprungen")
             return None
@@ -107,7 +107,7 @@ class PdfService:
         thumbnail_path = None
         try:
             output_path.parent.mkdir(parents=True, exist_ok=True)
-
+            
             # Thumbnail der ersten Seite rendern
             if order.filepath and order.filepath.exists():
                 thumbnail_path = self._render_page_thumbnail(order.filepath)
@@ -115,18 +115,18 @@ class PdfService:
             # Canvas erstellen
             c = canvas.Canvas(str(output_path), pagesize=A4)
             width, height = A4
-
+            
             # --- Header ---
             c.setFont("Helvetica-Bold", 18)
             c.drawString(50, height - 50, "Fachschaft - Skriptendruck")
             c.line(50, height - 60, width - 50, height - 60)
-
+            
             # --- Auftragsinformationen ---
             y = height - 90
             line_height = 18
             label_x = 50
             value_x = 200
-
+            
             def draw_field(label: str, value: str, bold_value: bool = False) -> None:
                 nonlocal y
                 c.setFont("Helvetica-Bold", 11)
@@ -134,24 +134,24 @@ class PdfService:
                 c.setFont("Helvetica-Bold" if bold_value else "Helvetica", 11)
                 c.drawString(value_x, y, value)
                 y -= line_height
-
+            
             draw_field("Auftrags-ID:", str(order.order_id))
             draw_field("Datum:", order.created_at.strftime("%d.%m.%Y %H:%M"))
             draw_field("Dateiname:", order.filename)
-
+            
             y -= 6  # Abstand
-
+            
             # --- Benutzer ---
             if order.user:
                 draw_field("RZ-Kennung:", order.user.username)
                 draw_field("Name:", order.user.full_name)
                 draw_field("Fakultät:", order.user.faculty)
                 y -= 6
-
+            
             # --- PDF-Informationen ---
             if order.page_count:
                 draw_field("Seitenzahl:", str(order.page_count))
-
+            
             # --- Preisberechnung ---
             if order.price_calculation:
                 calc = order.price_calculation
@@ -166,11 +166,11 @@ class PdfService:
                 else:
                     size_label = f" – {calc.binding_size_mm} mm" if calc.binding_size_mm else ""
                     binding_text = f"Ringbindung ({calc.binding_price_formatted}){size_label}"
-
+                
                 draw_field("Bindung:", binding_text)
-
+                
                 y -= 6
-
+                
                 # Gesamtpreis hervorgehoben
                 c.setFont("Helvetica-Bold", 13)
                 c.drawString(label_x, y, "Gesamtpreis:")
@@ -182,7 +182,7 @@ class PdfService:
                 c.setFont("Helvetica-Bold", 11)
                 c.drawString(value_x, y, calc.price_after_deposit_formatted)
                 y -= line_height
-
+            
             # --- Fehlerhinweis ---
             if order.status.value == "error_invalid_filename":
                 y -= 10
@@ -195,7 +195,7 @@ class PdfService:
                 y -= line_height
                 c.drawString(label_x, y, "RZ-Kennung_sw/farbig_mb/ob/sh_001.pdf")
                 c.setFillColorRGB(0, 0, 0)
-
+            
             # --- Thumbnail-Vorschau der ersten Seite ---
             if thumbnail_path:
                 try:
@@ -205,26 +205,26 @@ class PdfService:
                     c.setFillColorRGB(0.3, 0.3, 0.3)
                     c.drawString(label_x, preview_label_y, "Vorschau erste Seite:")
                     c.setFillColorRGB(0, 0, 0)
-
+                    
                     # Bildgröße berechnen – max 200pt breit, max verfügbare Höhe
                     img = ImageReader(thumbnail_path)
                     img_w, img_h = img.getSize()
-
+                    
                     max_thumb_w = 220
                     max_thumb_h = preview_label_y - 70  # Platz bis Footer lassen
-
+                    
                     scale = min(max_thumb_w / img_w, max_thumb_h / img_h, 1.0)
                     thumb_w = img_w * scale
                     thumb_h = img_h * scale
-
+                    
                     thumb_x = label_x
                     thumb_y = preview_label_y - thumb_h - 10
-
+                    
                     # Rahmen zeichnen
                     c.setStrokeColorRGB(0.7, 0.7, 0.7)
                     c.setLineWidth(0.5)
                     c.rect(thumb_x - 2, thumb_y - 2, thumb_w + 4, thumb_h + 4)
-
+                    
                     # Bild zeichnen
                     c.drawImage(
                         thumbnail_path,
@@ -232,10 +232,10 @@ class PdfService:
                         width=thumb_w, height=thumb_h,
                         preserveAspectRatio=True,
                     )
-
+                    
                 except Exception as e:
                     logger.warning(f"Thumbnail konnte nicht ins Deckblatt eingefügt werden: {e}")
-
+            
             # --- Footer ---
             c.setFillColorRGB(0, 0, 0)
             c.setFont("Helvetica", 8)

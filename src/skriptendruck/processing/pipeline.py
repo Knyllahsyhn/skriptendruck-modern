@@ -16,11 +16,11 @@ logger = get_logger("pipeline")
 
 class OrderPipeline:
     """Pipeline zur Verarbeitung von Druckaufträgen."""
-
+    
     def __init__(
-            self,
-            db_service: Optional[DatabaseService] = None,
-            file_organizer: Optional[FileOrganizer] = None,
+        self,
+        db_service: Optional[DatabaseService] = None,
+        file_organizer: Optional[FileOrganizer] = None,
     ) -> None:
         """Initialisiert die Pipeline."""
         self.filename_parser = FilenameParser()
@@ -30,7 +30,7 @@ class OrderPipeline:
         
         # Datenbank-Service (optional)
         self.db_service = db_service or DatabaseService()
-
+        
         # FileOrganizer für Ordnerstruktur
         self.file_organizer = file_organizer or FileOrganizer()
         
@@ -89,9 +89,9 @@ class OrderPipeline:
     def process_orders(
         self,
         orders: List[Order],
-            output_dir: Optional[Path] = None,
+        output_dir: Optional[Path] = None,
         save_to_db: bool = True,
-            organize_files: bool = True,
+        organize_files: bool = True,
     ) -> List[Order]:
         """
         Verarbeitet eine Liste von Aufträgen.
@@ -116,7 +116,7 @@ class OrderPipeline:
             processed = self._process_parallel(orders, work_dir)
         else:
             processed = self._process_sequential(orders, work_dir)
-
+        
         # Dateien in Ordnerstruktur organisieren
         if organize_files:
             try:
@@ -370,7 +370,7 @@ class OrderPipeline:
                 coversheet_path=order.coversheet_path,
                 document_path=order.filepath,
                 output_path=merged_path,
-                    add_empty_page=True,  # Leere Seite wie im Original (pdftk)
+                add_empty_page=True,  # Leere Seite wie im Original (pdftk)
             ):
                 order.merged_pdf_path = merged_path
             else:
