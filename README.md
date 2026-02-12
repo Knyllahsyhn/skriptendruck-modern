@@ -1,4 +1,4 @@
-# Skriptendruck v2.3
+# Skriptendruck 
 
 Modernisiertes Druckauftrags-Verwaltungssystem für die Fachschaft Maschinenbau, OTH Regensburg.
 Python-Neuentwicklung des ursprünglichen MATLAB-Systems mit LDAP-Integration, automatischer Preisberechnung,
