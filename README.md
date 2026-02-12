@@ -310,7 +310,10 @@ poetry run mypy src
 - Kein pdftk.exe mehr nötig – alles native Python
 - Kein Excel COM mehr – direkte PDF-Generierung mit reportlab
 - Kontakte.mat → LDAP oder CSV-Fallback
-
+## Roadmap
+- Drucken integrieren
+- Webinterface
+- Tests ausbauen
 ## Lizenz
 
 GPLv3
