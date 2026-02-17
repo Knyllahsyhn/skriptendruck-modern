@@ -62,7 +62,7 @@ Write-Host "  $poetryVersion" -ForegroundColor Green
 # --- 3. Dependencies ---
 $step++
 Write-Host "[$step/$totalSteps] Installiere Abhängigkeiten..." -ForegroundColor Cyan
-poetry install --no-dev 2>&1 | ForEach-Object {
+poetry install --without dev 2>&1 | ForEach-Object {
     if ($_ -match "Installing|Already") { Write-Host "  $_" -ForegroundColor DarkGray }
 }
 if ($LASTEXITCODE -ne 0) {

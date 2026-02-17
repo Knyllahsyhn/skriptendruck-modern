@@ -25,6 +25,9 @@ venv/
 ENV/
 env/
 .venv
+.
+
+
 
 # Poetry
 poetry.lock
@@ -49,6 +52,8 @@ logs/
 # Environment
 .env
 .env.local
+.credentials.enc
+.credentials.key
 
 # Data files (nur Beispieldaten committen)
 data/users_fallback.csv
