@@ -15,7 +15,6 @@ Verwendung:
 import base64
 import hashlib
 import json
-import platform
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -35,12 +34,10 @@ def _get_credentials_dir() -> Path:
 
 def _derive_key(passphrase: str) -> bytes:
     """Leitet einen Fernet-Schlüssel aus einer Passphrase ab."""
-    # PBKDF2 mit festem Salt (maschinenbezogen)
-    machine_id = platform.node().encode()
     key_bytes = hashlib.pbkdf2_hmac(
         "sha256",
         passphrase.encode(),
-        salt=b"skriptendruck_fsmb_" + machine_id,
+        salt=b"skriptendruck_fsmb_hs_regensburg",
         iterations=100_000,
     )
     # Fernet braucht 32 Bytes, base64-encoded
