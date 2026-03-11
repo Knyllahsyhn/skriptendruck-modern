@@ -107,7 +107,7 @@ def process(
         processed_orders = pipeline.process_orders(
             orders,
             organize_files=no_organize,
-            print_orders=do_print
+            print_orders= not do_print
         )
         progress.update(task, completed=len(orders))
 

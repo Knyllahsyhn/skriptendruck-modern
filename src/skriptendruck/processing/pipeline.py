@@ -94,7 +94,7 @@ class OrderPipeline:
         if save_to_db:
             self._save_to_database(processed)
         # Drucken
-       if print_orders:
+        if print_orders:
             logger.info("Starte automatischen Druckvorgang...")
             for order in processed:
                 if order.status == OrderStatus.PROCESSED:
