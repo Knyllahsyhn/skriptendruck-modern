@@ -1,0 +1,171 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="px-3">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h2>
+            <p class="text-muted mb-0">Willkommen, {{ user.display_name }}!</p>
+        </div>
+        <div>
+            <a href="/api/export/orders" class="btn btn-success">
+                <i class="bi bi-file-earmark-excel me-1"></i> Excel-Export
+            </a>
+        </div>
+    </div>
+
+    <!-- Statistik-Karten -->
+    <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-primary bg-opacity-10 rounded-3 p-3 me-3">
+                            <i class="bi bi-inbox-fill text-primary fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Aufträge gesamt</div>
+                            <div class="fs-3 fw-bold">{{ stats.total_orders }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-success bg-opacity-10 rounded-3 p-3 me-3">
+                            <i class="bi bi-check-circle-fill text-success fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Erfolgreich</div>
+                            <div class="fs-3 fw-bold text-success">{{ stats.successful_orders }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-danger bg-opacity-10 rounded-3 p-3 me-3">
+                            <i class="bi bi-x-circle-fill text-danger fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Fehler</div>
+                            <div class="fs-3 fw-bold text-danger">{{ stats.error_orders }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-warning bg-opacity-10 rounded-3 p-3 me-3">
+                            <i class="bi bi-currency-euro text-warning fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Gesamtumsatz</div>
+                            <div class="fs-3 fw-bold">{{ "%.2f"|format(stats.total_revenue) }} €</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Letzte Aufträge -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2"></i>Letzte Aufträge</h5>
+            <a href="/orders" class="btn btn-sm btn-outline-primary">Alle anzeigen <i class="bi bi-arrow-right"></i></a>
+        </div>
+        <div class="card-body p-0">
+            {% if recent_orders %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Datum</th>
+                            <th>Dateiname</th>
+                            <th>Benutzer</th>
+                            <th>Seiten</th>
+                            <th>Preis</th>
+                            <th>Status</th>
+                            <th class="text-end">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in recent_orders %}
+                        <tr id="order-row-{{ order.order_id }}">
+                            <td><span class="badge bg-secondary">{{ order.order_id }}</span></td>
+                            <td class="text-nowrap"><small>{{ order.created_at }}</small></td>
+                            <td>
+                                <span class="text-truncate d-inline-block" style="max-width: 250px;" title="{{ order.filename }}">
+                                    {{ order.filename }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if order.first_name and order.last_name %}
+                                    {{ order.first_name }} {{ order.last_name }}
+                                    <br><small class="text-muted">{{ order.username }}</small>
+                                {% else %}
+                                    {{ order.username or '–' }}
+                                {% endif %}
+                            </td>
+                            <td>{{ order.page_count or '–' }}</td>
+                            <td>
+                                {% if order.total_price is not none %}
+                                    {{ "%.2f"|format(order.total_price) }} €
+                                {% else %}
+                                    –
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% set status_class = {
+                                    'pending': 'warning',
+                                    'validated': 'info',
+                                    'processed': 'success',
+                                    'printed': 'primary'
+                                }.get(order.status, 'danger') %}
+                                <span class="badge bg-{{ status_class }}">
+                                    {{ order.status }}
+                                </span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                {% if order.status in ['pending', 'validated'] %}
+                                <button class="btn btn-sm btn-outline-success me-1"
+                                        onclick="startOrder({{ order.order_id }})"
+                                        title="Freigeben">
+                                    <i class="bi bi-play-fill"></i>
+                                </button>
+                                {% endif %}
+                                <button class="btn btn-sm btn-outline-danger"
+                                        onclick="deleteOrder({{ order.order_id }})"
+                                        title="Löschen">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                <p>Noch keine Aufträge vorhanden.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

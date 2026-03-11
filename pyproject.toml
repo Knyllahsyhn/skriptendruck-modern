@@ -28,6 +28,12 @@ xlsxwriter = "^3.2"  # FÃ¼r Excel-Export
 # CLI
 typer = {extras = ["all"], version = "^0.12"}
 rich = "^13.9"
+# Web Dashboard
+fastapi = "^0.115"
+uvicorn = {extras = ["standard"], version = "^0.32"}
+jinja2 = "^3.1"
+python-multipart = "^0.0.12"
+itsdangerous = "^2.2"
 # Utilities
 python-dotenv = "^1.0"
 
