@@ -1,4 +1,4 @@
-"""CLI-Befehle fÃ¼r das Skriptendruckprogramm."""
+"""CLI-Befehle für das Skriptendruckprogramm."""
 from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Optional
@@ -61,8 +61,9 @@ def process(
     setup_logging(level=log_level, log_file=settings.log_file)
 
     settings.parallel_processing=sequential
-    if do_print is not None:
+    if do_print:
         settings.auto_print = do_print
+    console.print(f"[yellow]DRUCK-MODUS AKTIVIERT[/yellow] (Drucker: {settings.printer_sw} / {settings.printer_color})")
 
     # FileOrganizer initialisieren
     organizer = FileOrganizer()
@@ -74,8 +75,6 @@ def process(
     console.print(f"Aufträge:     {orders_dir}")
     console.print(f"Druckfertig:  {organizer.base_path / organizer.DIR_PRINT}")
     console.print(f"Originale:    {organizer.get_originals_dir()}")
-    if settings.auto_print:
-        console.print(f"[yellow]DRUCK-MODUS AKTIVIERT[/yellow] (Drucker: {settings.printer_sw} / {settings.printer_color})")
     console.print()
 
     pipeline = OrderPipeline(file_organizer=organizer)
@@ -107,7 +106,7 @@ def process(
         processed_orders = pipeline.process_orders(
             orders,
             organize_files=no_organize,
-            print_orders= not do_print
+            print_orders=do_print
         )
         progress.update(task, completed=len(orders))
 
