@@ -86,11 +86,6 @@ if (-not $poetryFound) {
     exit 1
 }
 
-# Konfiguration: Virtualenv im Projektordner (.venv) erstellen
-# Das verhindert, dass das User-Profil (AppData) auf dem Netzlaufwerk gesprengt wird.
-Write-Host "  Konfiguriere Poetry (virtualenvs.in-project = true)..." -ForegroundColor Gray
-Invoke-Expression "$poetryCmd config virtualenvs.in-project true"
-
 $poetryVersion = Invoke-Expression "$poetryCmd --version 2>&1"
 Write-Host "  $poetryVersion" -ForegroundColor Green
 
