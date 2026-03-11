@@ -14,7 +14,7 @@ class PrintingService:
             return False
 
         # Drucker wählen basierend auf Farbmodus
-        printer = settings.printer_color if order.color_mode == ColorMode.COlOR else settings.printer_sw
+        printer = settings.printer_color if order.color_mode == ColorMode.COLOR else settings.printer_sw
         
         return self.send_to_printer(order.merged_pdf_path, printer)
 

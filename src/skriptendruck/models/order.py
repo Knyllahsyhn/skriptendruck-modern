@@ -15,6 +15,7 @@ class OrderStatus(str, Enum):
     PENDING = "pending"  # Auftrag erkannt
     VALIDATED = "validated"  # Benutzer validiert
     PROCESSED = "processed"  # PDF verarbeitet
+    PRINTED = "printed"
     ERROR_USER_NOT_FOUND = "error_user_not_found"
     ERROR_USER_BLOCKED = "error_user_blocked"
     ERROR_TOO_FEW_PAGES = "error_too_few_pages"

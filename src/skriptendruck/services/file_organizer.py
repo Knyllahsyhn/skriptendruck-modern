@@ -238,3 +238,20 @@ class FileOrganizer:
                     pass
 
         logger.debug(f"Batch organisiert: {len(orders)} Aufträge")
+
+    def move_to_printed(self, order: Order) -> Optional[Path]:
+        """Verschiebt ein gedrucktes PDF in den gedruckt/-Unterordner."""
+        if not order.merged_pdf_path or not order.merged_pdf_path.exists():
+            logger.error(f"Order #{order.order_id}: merged_pdf_path nicht gefunden: {order.merged_pdf_path}")
+            return None
+        try:
+            target_dir = order.merged_pdf_path.parent / self.DIR_PRINTED
+            target_dir.mkdir(parents=True, exist_ok=True)
+            target_path = target_dir / order.merged_pdf_path.name
+            shutil.move(str(order.merged_pdf_path), str(target_path))
+            order.merged_pdf_path = target_path
+            logger.info(f"Order #{order.order_id} gedruckt → {target_path}")
+            return target_path
+        except Exception as e:
+            logger.error(f"Fehler beim Verschieben von Order #{order.order_id}: {e}")
+            return None

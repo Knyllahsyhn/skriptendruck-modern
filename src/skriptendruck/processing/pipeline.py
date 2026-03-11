@@ -95,10 +95,12 @@ class OrderPipeline:
             self._save_to_database(processed)
         # Drucken
         if print_orders:
-            logger.info("Starte automatischen Druckvorgang...")
             for order in processed:
                 if order.status == OrderStatus.PROCESSED:
                     self.printing_service.print_order(order)
+                    order.status = OrderStatus.PRINTED
+                    if organize_files:
+                     self.file_organizer.move_to_printed(order)
 
         # Temp-Verzeichnis aufräumen
         self._cleanup_work_dir(work_dir)
