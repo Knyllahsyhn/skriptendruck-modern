@@ -4,6 +4,7 @@ from .file_organizer import FileOrganizer
 from .pdf_service import PdfService
 from .pricing_service import PricingService
 from .user_service import UserService
+from .printing_service import PrintingService
 
 __all__ = [
     "FilenameParser",
@@ -11,4 +12,5 @@ __all__ = [
     "UserService",
     "PdfService",
     "PricingService",
+    "PrintingService"
 ]

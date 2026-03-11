@@ -9,7 +9,7 @@ from typing import List, Optional
 from ..config import get_logger, settings
 from ..database.service import DatabaseService
 from ..models import BindingType, ColorMode, Order, OrderStatus
-from ..services import FilenameParser, PdfService, PricingService, UserService
+from ..services import FilenameParser, PdfService, PricingService, UserService,PrintingService
 from ..services.file_organizer import FileOrganizer
 
 logger = get_logger("pipeline")
@@ -33,6 +33,7 @@ class OrderPipeline:
         self.file_organizer = file_organizer or FileOrganizer()
         
         self._next_order_id = self._get_next_order_id()
+        self.printing_service = PrintingService()
     
     def _get_next_order_id(self) -> int:
         try:
@@ -94,6 +95,10 @@ class OrderPipeline:
 
         # Temp-Verzeichnis aufräumen
         self._cleanup_work_dir(work_dir)
+        if settings.auto_print:
+        for order in processed:
+            if order.status == OrderStatus.PROCESSED:
+                self.printing_service.print_order(order)
 
         return processed
 

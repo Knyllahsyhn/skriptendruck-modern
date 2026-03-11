@@ -127,6 +127,12 @@ class Settings(BaseSettings):
         """Gibt das Excel-Export-Verzeichnis zurück, erstellt es bei Bedarf."""
         self.excel_export_path.mkdir(parents=True, exist_ok=True)
         return self.excel_export_path
+    
+    # Drucken
+    printer_sw: str = "fsmbsw"
+    printer_color: str= "fsmbcolor"
+    sumatra_pdf_path: str = "C:/Program Files/SumatraPDF/SumatraPDF.exe"
+    auto_print: bool=False
 
 
 # Globale Settings-Instanz
