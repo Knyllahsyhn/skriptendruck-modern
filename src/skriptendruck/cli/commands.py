@@ -45,7 +45,7 @@ def process(
         help="AusfÃ¼hrliche Ausgabe"
     ),
     do_print: bool = typer.Option(
-        None, "--print", "-p",
+        False, "--print", "-p",
         help="Aufträge sofort drucken (überschreibt AUTO_PRINT)"
     ),
 ) -> None:
@@ -107,6 +107,7 @@ def process(
         processed_orders = pipeline.process_orders(
             orders,
             organize_files=no_organize,
+            print_orders=do_print
         )
         progress.update(task, completed=len(orders))
 

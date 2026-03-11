@@ -72,6 +72,7 @@ class OrderPipeline:
         orders: List[Order],
         save_to_db: bool = True,
         organize_files: bool = True,
+        print_orders: bool = False,
     ) -> List[Order]:
         # Temporäres Arbeitsverzeichnis für Deckblätter und Merge
         work_dir = Path(tempfile.mkdtemp(prefix="skriptendruck_"))
@@ -92,8 +93,8 @@ class OrderPipeline:
         # In Datenbank speichern
         if save_to_db:
             self._save_to_database(processed)
-
-       if settings.auto_print:
+        # Drucken
+       if print_orders:
             logger.info("Starte automatischen Druckvorgang...")
             for order in processed:
                 if order.status == OrderStatus.PROCESSED:
