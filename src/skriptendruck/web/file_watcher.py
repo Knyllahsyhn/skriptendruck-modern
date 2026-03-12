@@ -4,12 +4,20 @@
 trägt sie automatisch als 'pending' in die Datenbank ein.
 Der Watcher druckt NICHT automatisch – das passiert nur bei manuellem
 'Starten' über das Dashboard.
+
+Der überwachte Pfad wird wie folgt bestimmt:
+1. ``FILE_WATCHER_DIR`` aus der ``.env`` (falls gesetzt)
+2. Sonst: ``{BASE_PATH}/01_Auftraege``
+
+``BASE_PATH`` kann ein lokaler Pfad, ein gemapptes Netzlaufwerk
+(``Z:\\skriptendruck``) oder ein UNC-Pfad
+(``\\\\server\\share\\skriptendruck``) sein.
 """
 import asyncio
 import os
 import re
 from datetime import datetime
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 from typing import Optional, Set
 
 from sqlalchemy import select
@@ -19,6 +27,25 @@ from ..database.models import Base, OrderRecord
 from ..database.service import DatabaseService
 
 logger = get_logger("web.file_watcher")
+
+
+# ---------------------------------------------------------------------------
+# Hilfsfunktion: robuste Pfad-Erstellung (UNC + Netzlaufwerk-kompatibel)
+# ---------------------------------------------------------------------------
+
+def _resolve_orders_dir(orders_dir: Optional[Path] = None) -> Path:
+    """Ermittelt das Auftragsverzeichnis als :class:`Path`.
+
+    Unterstützt lokale Pfade, gemappte Laufwerke (``Z:\\...``) und
+    UNC-Pfade (``\\\\server\\share\\...``).  Auf Windows wird
+    :class:`pathlib.WindowsPath` automatisch UNC-Pfade korrekt handhaben;
+    auf Linux/macOS wird der rohe Pfad-String beibehalten.
+    """
+    if orders_dir is not None:
+        return orders_dir
+
+    base = settings.base_path
+    return Path(os.path.join(str(base), "01_Auftraege"))
 
 # ---------------------------------------------------------------------------
 # Dateiname-Parsing (leichtgewichtig, ohne schwere Pipeline-Abhängigkeiten)
@@ -178,13 +205,14 @@ def scan_orders_directory(orders_dir: Optional[Path] = None) -> int:
     """Scannt das Auftragsverzeichnis und registriert neue PDFs.
 
     Args:
-        orders_dir: Pfad zum Auftragsordner (default: settings.base_path / '01_Auftraege')
+        orders_dir: Pfad zum Auftragsordner.
+            Falls ``None``, wird ``{BASE_PATH}/01_Auftraege`` verwendet.
+            Unterstützt lokale Pfade, gemappte Netzlaufwerke und UNC-Pfade.
 
     Returns:
         Anzahl neu registrierter Aufträge.
     """
-    if orders_dir is None:
-        orders_dir = settings.base_path / "01_Auftraege"
+    orders_dir = _resolve_orders_dir(orders_dir)
 
     if not orders_dir.exists():
         logger.debug(f"Auftragsverzeichnis nicht vorhanden: {orders_dir}")
@@ -220,9 +248,10 @@ async def watch_orders_loop(
         poll_interval: Sekunden zwischen zwei Scans.
         orders_dir: Pfad zum Auftragsordner (optional, sonst default).
     """
+    resolved_dir = _resolve_orders_dir(orders_dir)
     logger.info(
         f"File-Watcher gestartet (Intervall: {poll_interval}s, "
-        f"Ordner: {orders_dir or settings.base_path / '01_Auftraege'})"
+        f"Ordner: {resolved_dir})"
     )
     while True:
         try:

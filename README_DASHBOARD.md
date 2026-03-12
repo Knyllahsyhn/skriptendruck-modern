@@ -55,10 +55,48 @@ Das Dashboard ist dann erreichbar unter: **http://localhost:8080**
 
 ## Konfiguration
 
-Alle Einstellungen erfolgen über die `.env`-Datei:
+Alle Einstellungen erfolgen über die `.env`-Datei (siehe `.env.example`).
+
+### BASE_PATH – Basispfad & Ordnerstruktur
+
+`BASE_PATH` ist der **zentrale Konfigurationswert**. Er zeigt auf den Ordner, unter dem die komplette Skriptendruck-Ordnerstruktur liegt. In der Regel ist das ein **Netzlaufwerk**.
+
+```
+BASE_PATH/
+├── 01_Auftraege/      ← Neue PDFs werden hier abgelegt (File-Watcher überwacht diesen Ordner)
+├── 02_Druckfertig/    ← Verarbeitete, druckfertige Aufträge
+├── 03_Originale/      ← Kopien der Originaldateien
+└── Export/            ← Excel-Exporte (Abrechnungs-/Auftragslisten)
+```
+
+**Unterstützte Pfadformate:**
+
+| Format | Beispiel |
+|---|---|
+| Gemapptes Netzlaufwerk | `H:/stud/fsmb/03_Dienste/01_Skriptendruck` |
+| UNC-Pfad | `\\\\server\\share\\skriptendruck` |
+| Lokaler Pfad | `C:/skriptendruck` |
+
+> **Hinweis:** In `.env`-Dateien müssen Backslashes verdoppelt werden (`\\`).
+> Alternativ können Forward-Slashes (`/`) verwendet werden, die auch unter Windows funktionieren.
+
+**Beispiele in der `.env`:**
+```env
+# Gemapptes Laufwerk
+BASE_PATH=H:/stud/fsmb/03_Dienste/01_Skriptendruck
+
+# UNC-Pfad (Backslashes verdoppelt)
+BASE_PATH=\\\\server\\share\\skriptendruck
+
+# Lokaler Test-Pfad
+BASE_PATH=C:/temp/skriptendruck
+```
+
+### Dashboard-Einstellungen
 
 | Variable | Beschreibung | Default |
 |---|---|---|
+| `BASE_PATH` | Basispfad für Ordnerstruktur (Netzlaufwerk/lokal) | `H:/stud/fsmb/...` |
 | `DASHBOARD_ADMIN_USER` | Fallback-Admin-Benutzername (wenn LDAP nicht verfügbar) | `admin` |
 | `DASHBOARD_ADMIN_PASSWORD` | Fallback-Admin-Passwort | `changeme` |
 | `DASHBOARD_HOST` | Server-Host | `0.0.0.0` |
@@ -80,7 +118,19 @@ Wenn LDAP nicht verfügbar ist, kann ein Admin-Account über die `.env`-Datei ko
 
 ## File-Watcher (Automatische Auftragserkennung)
 
-Das Dashboard enthält einen **Background-Service**, der den Aufträgeordner (`01_Auftraege`) kontinuierlich auf neue PDF-Dateien überwacht und diese automatisch als *pending* in die Datenbank einträgt.
+Das Dashboard enthält einen **Background-Service**, der den Aufträgeordner kontinuierlich auf neue PDF-Dateien überwacht und diese automatisch als *pending* in die Datenbank einträgt.
+
+### Überwachter Pfad
+
+Der File-Watcher überwacht standardmäßig:
+
+```
+{BASE_PATH}/01_Auftraege
+```
+
+`BASE_PATH` wird aus der `.env`-Datei gelesen. Da die Aufträge typischerweise auf einem **Netzlaufwerk** liegen, muss `BASE_PATH` entsprechend konfiguriert sein (siehe [BASE_PATH – Basispfad & Ordnerstruktur](#base_path--basispfad--ordnerstruktur)).
+
+Optional kann mit `FILE_WATCHER_DIR` ein abweichender Pfad angegeben werden.
 
 ### Funktionsweise
 
@@ -96,6 +146,8 @@ Das Dashboard enthält einen **Background-Service**, der den Aufträgeordner (`0
 | `FILE_WATCHER_ENABLED` | Watcher aktivieren/deaktivieren | `true` |
 | `FILE_WATCHER_INTERVAL` | Scan-Intervall in Sekunden | `10` |
 | `FILE_WATCHER_DIR` | Auftragsordner (optional, sonst `BASE_PATH/01_Auftraege`) | – |
+
+> **Wichtig:** Damit der File-Watcher funktioniert, muss der PC, auf dem das Dashboard läuft, Zugriff auf das Netzlaufwerk haben. Bei UNC-Pfaden (`\\server\share\...`) muss der Benutzer, unter dem der Prozess läuft, die entsprechenden Leserechte besitzen.
 
 ### Manueller Scan
 

@@ -21,9 +21,18 @@ class Settings(BaseSettings):
     )
     
     # Pfade
+    # BASE_PATH muss auf das Netzlaufwerk (oder lokalen Ordner) zeigen,
+    # unter dem die Unterordner 01_Auftraege, 02_Druckfertig etc. liegen.
+    # Unterstützt:
+    #   - Gemapptes Netzlaufwerk:  H:/stud/fsmb/03_Dienste/01_Skriptendruck
+    #   - UNC-Pfad:                \\server\share\skriptendruck
+    #   - Lokaler Pfad:            C:/skriptendruck
     base_path: Path = Field(
         default=Path("H:/stud/fsmb/03_Dienste/01_Skriptendruck"),
-        description="Basispfad für Ordnerstruktur (01_Auftraege, 02_Druckfertig, etc.)"
+        description=(
+            "Basispfad für Ordnerstruktur (01_Auftraege, 02_Druckfertig, etc.). "
+            "Kann ein lokaler Pfad, ein gemapptes Netzlaufwerk oder ein UNC-Pfad sein."
+        ),
     )
     
     # LDAP Konfiguration
