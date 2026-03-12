@@ -36,17 +36,29 @@ async def index(request: Request):
         db = _get_db()
         stats = db.get_statistics()
         
-        # Letzte 10 Aufträge laden
         with db.SessionLocal() as session:
             from ...database.models import OrderRecord
-            from sqlalchemy import select
-            stmt = select(OrderRecord).order_by(OrderRecord.created_at.desc()).limit(10)
-            recent_orders = list(session.scalars(stmt))
-            # Detach from session
-            recent_orders_data = [_order_to_dict(o) for o in recent_orders]
+            from sqlalchemy import select, func
+            
+            # Ausstehende Aufträge (pending) – separate Sektion
+            stmt_pending = select(OrderRecord).where(
+                OrderRecord.status == "pending"
+            ).order_by(OrderRecord.created_at.asc())
+            pending_orders_data = [_order_to_dict(o) for o in session.scalars(stmt_pending)]
+            
+            # Anzahl pending für Stats
+            pending_count = len(pending_orders_data)
+            
+            # Letzte 15 nicht-pending Aufträge
+            stmt_other = select(OrderRecord).where(
+                OrderRecord.status != "pending"
+            ).order_by(OrderRecord.created_at.desc()).limit(15)
+            recent_orders_data = [_order_to_dict(o) for o in session.scalars(stmt_other)]
     except Exception as e:
         logger.error(f"Fehler beim Laden der Dashboard-Daten: {e}")
         stats = {"total_orders": 0, "successful_orders": 0, "error_orders": 0, "total_revenue": 0.0}
+        pending_orders_data = []
+        pending_count = 0
         recent_orders_data = []
     
     templates = request.app.state.templates
@@ -54,6 +66,8 @@ async def index(request: Request):
         "request": request,
         "user": user,
         "stats": stats,
+        "pending_orders": pending_orders_data,
+        "pending_count": pending_count,
         "recent_orders": recent_orders_data,
     })
 

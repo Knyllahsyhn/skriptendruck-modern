@@ -10,7 +10,10 @@
             <h2 class="fw-bold mb-1"><i class="bi bi-speedometer2 me-2"></i>Dashboard</h2>
             <p class="text-muted mb-0">Willkommen, {{ user.display_name }}!</p>
         </div>
-        <div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary" onclick="triggerScan(this)">
+                <i class="bi bi-arrow-repeat me-1"></i> Ordner scannen
+            </button>
             <a href="/api/export/orders" class="btn btn-success">
                 <i class="bi bi-file-earmark-excel me-1"></i> Excel-Export
             </a>
@@ -19,6 +22,21 @@
 
     <!-- Statistik-Karten -->
     <div class="row g-3 mb-4">
+        <div class="col-sm-6 col-xl-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="bg-warning bg-opacity-10 rounded-3 p-3 me-3">
+                            <i class="bi bi-hourglass-split text-warning fs-4"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Ausstehend</div>
+                            <div class="fs-3 fw-bold text-warning">{{ pending_count }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
         <div class="col-sm-6 col-xl-3">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-body">
@@ -64,27 +82,79 @@
                 </div>
             </div>
         </div>
-        <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body">
-                    <div class="d-flex align-items-center">
-                        <div class="bg-warning bg-opacity-10 rounded-3 p-3 me-3">
-                            <i class="bi bi-currency-euro text-warning fs-4"></i>
-                        </div>
-                        <div>
-                            <div class="text-muted small">Gesamtumsatz</div>
-                            <div class="fs-3 fw-bold">{{ "%.2f"|format(stats.total_revenue) }} €</div>
-                        </div>
-                    </div>
-                </div>
+    </div>
+
+    <!-- ========== AUSSTEHENDE AUFTRÄGE (prominent oben) ========== -->
+    <div class="card border-0 shadow-sm mb-4 {% if pending_orders %}border-start border-warning border-4{% endif %}">
+        <div class="card-header border-bottom d-flex justify-content-between align-items-center">
+            <h5 class="mb-0 fw-semibold">
+                <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Ausstehende Aufträge
+                {% if pending_orders %}
+                <span class="badge bg-warning text-dark ms-2">{{ pending_count }}</span>
+                {% endif %}
+            </h5>
+            {% if pending_orders %}
+            <button class="btn btn-sm btn-warning fw-semibold" id="btnStartAll" onclick="startAllOrders(this)">
+                <i class="bi bi-play-fill me-1"></i> Alle starten ({{ pending_count }})
+            </button>
+            {% endif %}
+        </div>
+        <div class="card-body p-0">
+            {% if pending_orders %}
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="pendingOrdersTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th>#</th>
+                            <th>Datum</th>
+                            <th>Dateiname</th>
+                            <th>Status</th>
+                            <th class="text-end">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for order in pending_orders %}
+                        <tr id="order-row-{{ order.order_id }}">
+                            <td><span class="badge bg-secondary">{{ order.order_id }}</span></td>
+                            <td class="text-nowrap"><small>{{ order.created_at }}</small></td>
+                            <td>
+                                <span class="text-truncate d-inline-block" style="max-width: 350px;" title="{{ order.filename }}">
+                                    {{ order.filename }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-warning text-dark order-status-badge">Ausstehend</span>
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <button class="btn btn-sm btn-success me-1 btn-start-order"
+                                        onclick="startOrder({{ order.order_id }}, this)"
+                                        title="Freigeben & Verarbeiten">
+                                    <i class="bi bi-play-fill"></i> Starten
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger"
+                                        onclick="deleteOrder({{ order.order_id }})"
+                                        title="Löschen">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+            {% else %}
+            <div class="text-center py-4 text-muted">
+                <i class="bi bi-check-circle fs-2 d-block mb-2 text-success"></i>
+                <p class="mb-0">Keine ausstehenden Aufträge – alles erledigt!</p>
+            </div>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Letzte Aufträge -->
+    <!-- ========== LETZTE VERARBEITETE AUFTRÄGE ========== -->
     <div class="card border-0 shadow-sm">
         <div class="card-header border-bottom d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2"></i>Letzte Aufträge</h5>
+            <h5 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2"></i>Letzte verarbeitete Aufträge</h5>
             <a href="/orders" class="btn btn-sm btn-outline-primary">Alle anzeigen <i class="bi bi-arrow-right"></i></a>
         </div>
         <div class="card-body p-0">
@@ -130,24 +200,25 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% set status_class = {
-                                    'pending': 'warning',
-                                    'validated': 'info',
-                                    'processed': 'success',
-                                    'printed': 'primary'
-                                }.get(order.status, 'danger') %}
-                                <span class="badge bg-{{ status_class }}">
-                                    {{ order.status }}
+                                {% set status_map = {
+                                    'processing': ('Verarbeitung…', 'info'),
+                                    'validated': ('Validiert', 'info'),
+                                    'processed': ('Verarbeitet', 'success'),
+                                    'printed': ('Gedruckt', 'primary'),
+                                    'error_user_not_found': ('User fehlt', 'danger'),
+                                    'error_user_blocked': ('Blockiert', 'danger'),
+                                    'error_too_few_pages': ('Zu wenig S.', 'danger'),
+                                    'error_too_many_pages': ('Zu viele S.', 'danger'),
+                                    'error_password_protected': ('Passwort', 'danger'),
+                                    'error_invalid_filename': ('Dateiname', 'danger'),
+                                    'error_unknown': ('Fehler', 'danger'),
+                                } %}
+                                {% set label, cls = status_map.get(order.status, (order.status, 'secondary')) %}
+                                <span class="badge bg-{{ cls }}" title="{{ order.error_message or '' }}">
+                                    {{ label }}
                                 </span>
                             </td>
                             <td class="text-end text-nowrap">
-                                {% if order.status in ['pending', 'validated'] %}
-                                <button class="btn btn-sm btn-outline-success me-1"
-                                        onclick="startOrder({{ order.order_id }})"
-                                        title="Freigeben">
-                                    <i class="bi bi-play-fill"></i>
-                                </button>
-                                {% endif %}
                                 <button class="btn btn-sm btn-outline-danger"
                                         onclick="deleteOrder({{ order.order_id }})"
                                         title="Löschen">
@@ -162,7 +233,7 @@
             {% else %}
             <div class="text-center py-5 text-muted">
                 <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                <p>Noch keine Aufträge vorhanden.</p>
+                <p>Noch keine verarbeiteten Aufträge vorhanden.</p>
             </div>
             {% endif %}
         </div>

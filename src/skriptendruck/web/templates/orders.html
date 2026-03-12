@@ -11,6 +11,9 @@
             <p class="text-muted mb-0">{{ total }} Aufträge insgesamt</p>
         </div>
         <div class="d-flex gap-2">
+            <button class="btn btn-warning fw-semibold" onclick="startAllOrders(this)">
+                <i class="bi bi-play-fill me-1"></i> Alle ausstehenden starten
+            </button>
             <a href="/api/export/orders" class="btn btn-success">
                 <i class="bi bi-file-earmark-excel me-1"></i> Excel-Export
             </a>
@@ -132,11 +135,11 @@
                             </td>
                             <td><small>{{ order.operator or '–' }}</small></td>
                             <td class="text-end text-nowrap">
-                                {% if order.status in ['pending', 'validated'] %}
-                                <button class="btn btn-sm btn-outline-success me-1"
-                                        onclick="startOrder({{ order.order_id }})"
-                                        title="Freigeben">
-                                    <i class="bi bi-play-fill"></i>
+                                {% if order.status in ['pending'] %}
+                                <button class="btn btn-sm btn-success me-1 btn-start-order"
+                                        onclick="startOrder({{ order.order_id }}, this)"
+                                        title="Freigeben & Verarbeiten">
+                                    <i class="bi bi-play-fill"></i> Starten
                                 </button>
                                 {% endif %}
                                 <button class="btn btn-sm btn-outline-danger"

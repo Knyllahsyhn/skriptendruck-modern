@@ -373,6 +373,76 @@ async def export_billing_excel(request: Request):
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
+@router.post("/orders/start-all")
+async def start_all_pending_orders(request: Request):
+    """Startet die Pipeline für ALLE pending Aufträge nacheinander.
+
+    Gibt für jeden Auftrag ein Ergebnis zurück (success/fail).
+    Wenn ein Auftrag fehlschlägt, werden die anderen trotzdem verarbeitet.
+    """
+    user, error = _require_auth(request)
+    if error:
+        return error
+
+    try:
+        db = _get_db()
+        with db.SessionLocal() as session:
+            stmt = select(OrderRecord).where(OrderRecord.status == "pending").order_by(OrderRecord.created_at.asc())
+            pending_orders = list(session.scalars(stmt))
+
+            if not pending_orders:
+                return JSONResponse(content={
+                    "success": True,
+                    "message": "Keine ausstehenden Aufträge vorhanden",
+                    "results": [],
+                    "total": 0,
+                })
+
+            # Set all to processing and collect snapshots
+            snapshots = []
+            for order in pending_orders:
+                order.operator = user["username"]
+                order.status = "processing"
+                snapshots.append(OrderRecord(
+                    order_id=order.order_id,
+                    filename=order.filename,
+                    original_filepath=order.original_filepath,
+                    operator=order.operator,
+                ))
+            session.commit()
+
+        # Process each order sequentially in a thread
+        loop = asyncio.get_running_loop()
+        results = []
+        for snap in snapshots:
+            result = await loop.run_in_executor(None, _run_pipeline_for_order, snap)
+            results.append({
+                "order_id": snap.order_id,
+                "filename": snap.filename,
+                **result,
+            })
+
+        success_count = sum(1 for r in results if r["success"])
+        fail_count = len(results) - success_count
+        logger.info(
+            f"Bulk-Verarbeitung von {user['username']}: "
+            f"{success_count} erfolgreich, {fail_count} fehlgeschlagen"
+        )
+
+        return JSONResponse(content={
+            "success": True,
+            "message": f"{success_count} von {len(results)} Aufträgen erfolgreich verarbeitet",
+            "results": results,
+            "total": len(results),
+            "success_count": success_count,
+            "fail_count": fail_count,
+        })
+
+    except Exception as e:
+        logger.error(f"Fehler bei Bulk-Verarbeitung: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
 @router.get("/statistics")
 async def get_statistics(request: Request):
     """Gibt Statistiken als JSON zurück."""
