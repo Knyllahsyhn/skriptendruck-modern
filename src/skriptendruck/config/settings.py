@@ -146,6 +146,14 @@ class Settings(BaseSettings):
         description="Pfad zur SumatraPDF.exe"
     )
     auto_print: bool = Field(default=False, description="Sollen Aufträge sofort gedruckt werden?")
+    enable_printing: bool = Field(
+        default=False,
+        description=(
+            "Drucken im Web-Dashboard aktivieren. "
+            "Wenn True, wird nach dem PDF-Merge automatisch an den "
+            "konfigurierten Drucker gesendet (SumatraPDF Silent-Print)."
+        ),
+    )
 
 
 # Globale Settings-Instanz

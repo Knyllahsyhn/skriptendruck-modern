@@ -30,6 +30,12 @@ STATIC_DIR = BASE_DIR / "static"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Managed den Lebenszyklus der App (Startup / Shutdown)."""
+    # --- Datenbank einmalig initialisieren (Singleton) ---
+    from ..database.service import DatabaseService
+
+    db = DatabaseService()  # Singleton – erstellt Engine + Tabellen nur einmal
+    logger.info(f"Datenbank bereit: {db.db_path}")
+
     from .file_watcher import scan_orders_directory, watch_orders_loop
 
     # Konfigurierbare Werte

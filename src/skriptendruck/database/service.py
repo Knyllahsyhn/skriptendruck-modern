@@ -1,7 +1,8 @@
 """Datenbank-Service für SQLAlchemy-Operationen."""
+import threading
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
@@ -14,25 +15,57 @@ logger = get_logger("database")
 
 
 class DatabaseService:
-    """Service für Datenbank-Operationen."""
-    
+    """Service für Datenbank-Operationen.
+
+    Verwendet ein Singleton-Pattern pro db_path, sodass für denselben
+    Datenbankpfad immer dieselbe Engine/Session-Factory verwendet wird.
+    ``Base.metadata.create_all`` wird nur einmal pro Pfad ausgeführt.
+    """
+
+    _instances: Dict[str, "DatabaseService"] = {}
+    _lock = threading.Lock()
+
+    def __new__(cls, db_path: Optional[Path] = None) -> "DatabaseService":
+        if db_path is None:
+            db_path = settings.database_path
+            if not db_path.is_absolute():
+                db_path = settings.base_path / db_path
+
+        key = str(db_path)
+        with cls._lock:
+            if key not in cls._instances:
+                instance = super().__new__(cls)
+                instance._initialized = False
+                cls._instances[key] = instance
+            return cls._instances[key]
+
     def __init__(self, db_path: Optional[Path] = None) -> None:
         """
         Initialisiert den DatabaseService.
-        
+
         Args:
             db_path: Pfad zur SQLite-Datenbank (optional)
         """
+        if getattr(self, "_initialized", False):
+            return
+
         if db_path is None:
-            db_path = settings.base_path / "skriptendruck.db"
-        
+            db_path = settings.database_path
+            if not db_path.is_absolute():
+                db_path = settings.base_path / db_path
+
         self.db_path = db_path
-        self.engine = create_engine(f"sqlite:///{db_path}", echo=False)
+        self.engine = create_engine(
+            f"sqlite:///{db_path}",
+            echo=False,
+            pool_pre_ping=True,
+        )
         self.SessionLocal = sessionmaker(bind=self.engine)
-        
-        # Tabellen erstellen falls nicht vorhanden
+
+        # Tabellen erstellen falls nicht vorhanden – nur einmal
         Base.metadata.create_all(self.engine)
         logger.info(f"Datenbank initialisiert: {db_path}")
+        self._initialized = True
     
     def save_order(self, order: Order) -> OrderRecord:
         """

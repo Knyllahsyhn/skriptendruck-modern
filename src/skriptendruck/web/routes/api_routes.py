@@ -45,6 +45,39 @@ def _require_auth(request: Request) -> tuple:
 
 
 # ---------------------------------------------------------------------------
+# Druck-Hilfsfunktion
+# ---------------------------------------------------------------------------
+
+def _try_print_order(order) -> bool:
+    """Versucht den Auftrag an den konfigurierten Drucker zu senden.
+
+    Fehler beim Drucken werden geloggt, führen aber NICHT zu einem
+    Fehler-Status des Auftrags – der Auftrag bleibt 'processed'.
+
+    Returns:
+        True wenn der Druckauftrag erfolgreich gesendet wurde.
+    """
+    try:
+        from ...services.printing_service import PrintingService
+
+        printer = PrintingService()
+        success = printer.print_order(order)
+        if success:
+            logger.info(
+                f"Druckauftrag für Order #{order.order_id} erfolgreich gesendet"
+            )
+        else:
+            logger.warning(
+                f"Druckauftrag für Order #{order.order_id} fehlgeschlagen "
+                f"(Drucker nicht erreichbar oder SumatraPDF nicht gefunden)"
+            )
+        return success
+    except Exception as exc:
+        logger.warning(f"Druck-Fehler für Order #{order.order_id}: {exc}")
+        return False
+
+
+# ---------------------------------------------------------------------------
 # Pipeline-Verarbeitung (wird in einem Thread ausgeführt)
 # ---------------------------------------------------------------------------
 
@@ -137,16 +170,24 @@ def _run_pipeline_for_order(order_record: OrderRecord) -> dict:
             except Exception as exc:
                 logger.warning(f"Billing-Record Fehler: {exc}")
 
+        # ----- Drucken (optional, konfigurierbar via ENABLE_PRINTING) -----
+        printed = False
+        if order.status == OrderStatus.PROCESSED and settings.enable_printing:
+            printed = _try_print_order(order)
+
         if order.is_error:
             return {"success": False, "message": f"Verarbeitung fehlgeschlagen: {order.error_message}"}
 
-        return {
-            "success": True,
-            "message": (
-                f"Auftrag #{order.order_id} erfolgreich verarbeitet "
-                f"({order.page_count} Seiten, Status: {order.status.value})"
-            ),
-        }
+        msg = (
+            f"Auftrag #{order.order_id} erfolgreich verarbeitet "
+            f"({order.page_count} Seiten, Status: {order.status.value})"
+        )
+        if printed:
+            msg += " – Druckauftrag gesendet"
+        elif settings.enable_printing:
+            msg += " – Druck fehlgeschlagen (Auftrag trotzdem abgeschlossen)"
+
+        return {"success": True, "message": msg}
     except Exception as exc:
         logger.error(f"Pipeline-Fehler für Order #{order_record.order_id}: {exc}")
         # Status auf Fehler setzen
