@@ -1,4 +1,4 @@
-# Windows-Service Setup – Skriptendruck Dashboard
+﻿# Windows-Service Setup – Skriptendruck Dashboard
 
 Diese Anleitung beschreibt, wie das Skriptendruck-Dashboard als **Windows-Service** eingerichtet wird, damit es automatisch beim Serverstart läuft und alle Druckaufträge unter dem Service-Account `skriptendruck-service` ausgeführt werden.
 

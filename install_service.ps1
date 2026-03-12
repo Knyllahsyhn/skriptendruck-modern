@@ -1,4 +1,4 @@
-#Requires -RunAsAdministrator
+﻿#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
     Installiert das Skriptendruck-Dashboard als Windows-Service via NSSM.
