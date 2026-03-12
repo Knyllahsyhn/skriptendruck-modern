@@ -12,7 +12,7 @@ from ..config import get_logger, settings
 logger = get_logger("web.auth")
 
 # Erlaubte LDAP-Gruppen für Dashboard-Zugriff
-ALLOWED_GROUPS = {"Vorstand", "IT", "Skriptendruck"}
+ALLOWED_GROUPS = {"M_FB_STUD_FSMB_Dienst_1", "M_FB_STUD_FSMB_Administratoren"}
 
 
 def get_current_user(request: Request) -> Optional[dict]:
