@@ -1,46 +1,42 @@
 [tool.poetry]
 name = "skriptendruck"
-version = "2.3.0"
-description = "Modernisiertes Skriptendruckprogramm fÃ¼r die Fachschaft"
-authors = ["Your Name <your.email@example.com>"]
+version = "3.0.0"
+description = "Web-Dashboard für Skriptendruck - Fachschaft Maschinenbau OTH Regensburg"
+authors = ["FSMB Regensburg"]
 readme = "README.md"
 packages = [{include = "skriptendruck", from = "src"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-# Core dependencies
+# Core
 pydantic = "^2.9"
 pydantic-settings = "^2.6"
 # PDF processing
 pypdf = "^5.1"
-reportlab = "^4.2"  # FÃ¼r Deckblatterstellung
-PyMuPDF = "^1.24"   # FÃ¼r Thumbnail-Rendering der ersten Seite
-# LDAP (Windows-kompatibel!)
+reportlab = "^4.2"
+PyMuPDF = "^1.24"
+# LDAP Authentication
 ldap3 = "^2.9"
-# Verschlüsselte Credentials
+# Encrypted Credentials
 cryptography = "^43.0"
 # Database
 sqlalchemy = "^2.0"
-alembic = "^1.13"  # FÃ¼r DB-Migrationen
-# Excel
+# Excel Export
 openpyxl = "^3.1"
-xlsxwriter = "^3.2"  # FÃ¼r Excel-Export
-# CLI
-typer = {extras = ["all"], version = "^0.12"}
-rich = "^13.9"
+xlsxwriter = "^3.2"
+# Web Dashboard
+fastapi = "^0.115"
+uvicorn = {extras = ["standard"], version = "^0.32"}
+jinja2 = "^3.1"
+python-multipart = "^0.0.12"
+itsdangerous = "^2.2"
 # Utilities
 python-dotenv = "^1.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.3"
-pytest-cov = "^6.0"
-pytest-mock = "^3.14"
 black = "^24.10"
 ruff = "^0.7"
-mypy = "^1.13"
-
-[tool.poetry.scripts]
-skriptendruck = "skriptendruck.__main__:main"
 
 [build-system]
 requires = ["poetry-core"]
@@ -53,16 +49,3 @@ target-version = ['py311']
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-
-[tool.mypy]
-python_version = "3.11"
-warn_return_any = true
-warn_unused_configs = true
-disallow_untyped_defs = true
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = "-v --cov=src/skriptendruck --cov-report=term-missing"

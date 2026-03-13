@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="de" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Skriptendruck{% endblock %} – FSMB Dashboard</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/static/img/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/static/img/apple-touch-icon.png">
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link href="/static/css/dashboard.css" rel="stylesheet">
+    {% block head_extra %}{% endblock %}
+    <!-- Inline script: apply saved theme ASAP to prevent flash -->
+    <script>
+        (function() {
+            var theme = localStorage.getItem('fsmb-theme') || 'light';
+            document.documentElement.setAttribute('data-bs-theme', theme);
+        })();
+    </script>
+</head>
+<body>
+    {% if user %}
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-fsmb sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="/">
+                <img src="/static/img/fsmb_logo.png" alt="FSMB Logo" width="32" height="32" class="me-2 fsmb-logo-adaptive">
+                <span class="fw-bold">Skriptendruck</span>
+                <span class="d-none d-md-inline ms-2 opacity-75 small">FSMB Regensburg</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.url.path == '/' %}active{% endif %}" href="/">
+                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.url.path == '/orders' %}active{% endif %}" href="/orders">
+                            <i class="bi bi-list-task me-1"></i> Aufträge
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.url.path == '/statistics' %}active{% endif %}" href="/statistics">
+                            <i class="bi bi-bar-chart-line me-1"></i> Statistiken
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-download me-1"></i> Export
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/api/export/orders"><i class="bi bi-file-earmark-excel me-2"></i>Auftragsliste (Excel)</a></li>
+                            <li><a class="dropdown-item" href="/api/export/billing"><i class="bi bi-file-earmark-excel me-2"></i>Abrechnungsliste (Excel)</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <div class="navbar-nav d-flex align-items-center">
+                    <!-- Printing Toggle -->
+                    <div class="printing-toggle-wrapper me-3 d-flex align-items-center" title="Drucken ein-/ausschalten">
+                        <i class="bi bi-printer me-1 text-light opacity-75"></i>
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" role="switch" id="printingToggle">
+                            <label class="form-check-label small text-light opacity-75 d-none d-lg-inline" for="printingToggle">Drucken</label>
+                        </div>
+                    </div>
+                    <!-- Dark Mode Toggle -->
+                    <button class="theme-toggle me-3" id="themeToggle" title="Dark/Light Mode umschalten" aria-label="Design-Modus wechseln">
+                        <i class="bi bi-moon-fill" id="themeIcon"></i>
+                    </button>
+                    <span class="nav-link" style="color: rgba(255,255,255,0.75);">
+                        <i class="bi bi-person-circle me-1"></i>
+                        {{ user.display_name }}
+                        {% if user.groups %}
+                        <small class="badge ms-1">{{ user.groups|join(', ') }}</small>
+                        {% endif %}
+                    </span>
+                    <a class="nav-link text-accent-logout" href="/logout" title="Abmelden">
+                        <i class="bi bi-box-arrow-right"></i> Abmelden
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Hauptinhalt -->
+    <main class="{% if user %}container-fluid py-4{% endif %}">
+        {% block content %}{% endblock %}
+    </main>
+
+    {% if user %}
+    <!-- Footer -->
+    <footer class="footer-fsmb">
+        <div class="container-fluid">
+            <div class="row align-items-center">
+                <div class="col-md-4 text-center text-md-start mb-2 mb-md-0">
+                    <img src="/static/img/fsmb_logo.png" alt="FSMB" class="footer-logo me-2 fsmb-logo-adaptive">
+                    <span class="small">FSMB Regensburg e.V.</span>
+                </div>
+                <div class="col-md-4 text-center mb-2 mb-md-0">
+                    <small class="opacity-75">Skriptendruck – Druckauftragsverwaltung</small>
+                </div>
+                <div class="col-md-4 text-center text-md-end">
+                    <small class="opacity-50">&copy; 2026 FSMB Regensburg e.V.</small>
+                </div>
+            </div>
+        </div>
+    </footer>
+    {% endif %}
+
+    <!-- Toast Container für Benachrichtigungen -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" id="toastContainer"></div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="/static/js/dashboard.js"></script>
+    {% block scripts_extra %}{% endblock %}
+</body>
+</html>

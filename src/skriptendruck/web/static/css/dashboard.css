@@ -1,0 +1,984 @@
+/* ============================================================
+   Skriptendruck Dashboard – FSMB Regensburg e.V.
+   Industrial Engineering Design with Dark/Light Mode
+   ============================================================ */
+
+/* ---- CSS Custom Properties (Light Mode – Default) ---- */
+:root,
+[data-bs-theme="light"] {
+    /* Primary: Industrial Steel/Slate */
+    --fsmb-primary: #2d3436;
+    --fsmb-primary-rgb: 45, 52, 54;
+    --fsmb-primary-hover: #1e2526;
+
+    /* Accent: Engineering Orange */
+    --fsmb-accent: #e17055;
+    --fsmb-accent-rgb: 225, 112, 85;
+    --fsmb-accent-hover: #d35400;
+
+    /* Secondary: Industrial Blue-Grey */
+    --fsmb-secondary: #636e72;
+    --fsmb-secondary-rgb: 99, 110, 114;
+
+    /* Surface colors */
+    --fsmb-bg: #f5f6fa;
+    --fsmb-bg-secondary: #ffffff;
+    --fsmb-surface: #ffffff;
+    --fsmb-surface-hover: #f8f9fa;
+
+    /* Text */
+    --fsmb-text: #2d3436;
+    --fsmb-text-secondary: #636e72;
+    --fsmb-text-muted: #b2bec3;
+
+    /* Borders */
+    --fsmb-border: #dfe6e9;
+    --fsmb-border-light: #e9ecef;
+
+    /* Navbar */
+    --fsmb-navbar-bg: #2d3436;
+    --fsmb-navbar-text: #ffffff;
+    --fsmb-navbar-accent: #e17055;
+
+    /* Cards */
+    --fsmb-card-bg: #ffffff;
+    --fsmb-card-border: rgba(0,0,0,0.06);
+    --fsmb-card-shadow: 0 2px 12px rgba(0,0,0,0.06);
+
+    /* Table */
+    --fsmb-table-header-bg: #f1f2f6;
+    --fsmb-table-stripe: rgba(0,0,0,0.02);
+
+    /* Footer */
+    --fsmb-footer-bg: #2d3436;
+    --fsmb-footer-text: #b2bec3;
+
+    /* Login */
+    --fsmb-login-gradient-start: #2d3436;
+    --fsmb-login-gradient-end: #636e72;
+
+    /* Misc */
+    --fsmb-scrollbar-thumb: #b2bec3;
+    --fsmb-scrollbar-track: #dfe6e9;
+    --fsmb-input-bg: #ffffff;
+    --fsmb-input-border: #dfe6e9;
+}
+
+/* ---- Dark Mode ---- */
+[data-bs-theme="dark"] {
+    --fsmb-primary: #e17055;
+    --fsmb-primary-rgb: 225, 112, 85;
+    --fsmb-primary-hover: #d35400;
+
+    --fsmb-accent: #e17055;
+    --fsmb-accent-rgb: 225, 112, 85;
+    --fsmb-accent-hover: #f0825e;
+
+    --fsmb-secondary: #a4b0be;
+    --fsmb-secondary-rgb: 164, 176, 190;
+
+    --fsmb-bg: #1a1d23;
+    --fsmb-bg-secondary: #21252b;
+    --fsmb-surface: #282c34;
+    --fsmb-surface-hover: #2f343d;
+
+    --fsmb-text: #e4e6eb;
+    --fsmb-text-secondary: #a4b0be;
+    --fsmb-text-muted: #6c757d;
+
+    --fsmb-border: #3a3f47;
+    --fsmb-border-light: #2f343d;
+
+    --fsmb-navbar-bg: #21252b;
+    --fsmb-navbar-text: #e4e6eb;
+    --fsmb-navbar-accent: #e17055;
+
+    --fsmb-card-bg: #282c34;
+    --fsmb-card-border: rgba(255,255,255,0.06);
+    --fsmb-card-shadow: 0 2px 12px rgba(0,0,0,0.3);
+
+    --fsmb-table-header-bg: #21252b;
+    --fsmb-table-stripe: rgba(255,255,255,0.02);
+
+    --fsmb-footer-bg: #21252b;
+    --fsmb-footer-text: #6c757d;
+
+    --fsmb-login-gradient-start: #1a1d23;
+    --fsmb-login-gradient-end: #2d3436;
+
+    --fsmb-scrollbar-thumb: #4a4f57;
+    --fsmb-scrollbar-track: #21252b;
+    --fsmb-input-bg: #21252b;
+    --fsmb-input-border: #3a3f47;
+}
+
+
+/* ============================================================
+   Global
+   ============================================================ */
+body {
+    background-color: var(--fsmb-bg);
+    color: var(--fsmb-text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--fsmb-scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--fsmb-scrollbar-thumb); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--fsmb-accent); }
+
+
+/* ============================================================
+   Navbar
+   ============================================================ */
+.navbar-fsmb {
+    background-color: var(--fsmb-navbar-bg) !important;
+    border-bottom: 3px solid var(--fsmb-accent);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+}
+
+.navbar-fsmb .navbar-brand {
+    font-size: 1.15rem;
+    letter-spacing: 0.5px;
+    color: var(--fsmb-navbar-text) !important;
+}
+
+.navbar-fsmb .navbar-brand img {
+    transition: transform 0.2s ease, filter 0.3s ease;
+}
+
+.navbar-fsmb .navbar-brand:hover img {
+    transform: scale(1.05);
+}
+
+.navbar-fsmb .nav-link {
+    color: rgba(255,255,255,0.8) !important;
+    font-weight: 500;
+    transition: color 0.2s ease;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+}
+
+.navbar-fsmb .nav-link:hover,
+.navbar-fsmb .nav-link.active {
+    color: #ffffff !important;
+}
+
+.navbar-fsmb .nav-link.active {
+    border-bottom: 2px solid var(--fsmb-accent);
+}
+
+.navbar-fsmb .nav-link.text-accent-logout {
+    color: var(--fsmb-accent) !important;
+}
+
+.navbar-fsmb .nav-link.text-accent-logout:hover {
+    color: var(--fsmb-accent-hover) !important;
+}
+
+
+/* ============================================================
+   Dark Mode Toggle
+   ============================================================ */
+.theme-toggle {
+    background: none;
+    border: 1.5px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: rgba(255,255,255,0.8);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    padding: 0;
+}
+
+.theme-toggle:hover {
+    border-color: var(--fsmb-accent);
+    color: var(--fsmb-accent);
+    transform: rotate(20deg);
+}
+
+
+/* ============================================================
+   Login Page
+   ============================================================ */
+.login-wrapper {
+    background: linear-gradient(135deg, var(--fsmb-login-gradient-start) 0%, var(--fsmb-login-gradient-end) 50%, var(--fsmb-accent) 100%);
+    min-height: 100vh;
+}
+
+.login-card {
+    border-radius: 1rem;
+    background-color: var(--fsmb-card-bg);
+    border: 1px solid var(--fsmb-card-border);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.login-card .card-body {
+    color: var(--fsmb-text);
+}
+
+.login-logo {
+    width: 120px;
+    height: 120px;
+    object-fit: contain;
+}
+
+[data-bs-theme="dark"] .login-logo {
+    filter: drop-shadow(0 0 15px rgba(255, 255, 255, 0.9));
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    padding: 5px;
+}
+
+
+.login-card h3 {
+    color: var(--fsmb-text);
+}
+
+.login-card .text-muted {
+    color: var(--fsmb-text-secondary) !important;
+}
+
+.login-card .form-label {
+    color: var(--fsmb-text);
+}
+
+.login-card .form-control {
+    background-color: var(--fsmb-input-bg);
+    border-color: var(--fsmb-input-border);
+    color: var(--fsmb-text);
+}
+
+.login-card .form-control:focus {
+    border-color: var(--fsmb-accent);
+    box-shadow: 0 0 0 0.2rem rgba(var(--fsmb-accent-rgb), 0.25);
+}
+
+.login-card .btn-fsmb {
+    background-color: var(--fsmb-accent);
+    border-color: var(--fsmb-accent);
+    color: #fff;
+}
+
+.login-card .btn-fsmb:hover {
+    background-color: var(--fsmb-accent-hover);
+    border-color: var(--fsmb-accent-hover);
+}
+
+
+/* ============================================================
+   Cards
+   ============================================================ */
+.card {
+    background-color: var(--fsmb-card-bg);
+    border: 1px solid var(--fsmb-card-border);
+    border-radius: 0.75rem;
+    box-shadow: var(--fsmb-card-shadow);
+    transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-1px);
+}
+
+.card-header {
+    background-color: var(--fsmb-surface) !important;
+    border-bottom: 1px solid var(--fsmb-border) !important;
+    color: var(--fsmb-text);
+}
+
+.card-header h5 {
+    color: var(--fsmb-text);
+}
+
+/* Stat cards accent border */
+.stat-card {
+    border-left: 4px solid var(--fsmb-accent) !important;
+}
+
+
+/* ============================================================
+   Tables
+   ============================================================ */
+.table {
+    color: var(--fsmb-text);
+}
+
+.table > thead > tr > th {
+    font-weight: 600;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--fsmb-text-secondary);
+    background-color: var(--fsmb-table-header-bg);
+    border-bottom: 2px solid var(--fsmb-border);
+}
+
+.table > tbody > tr > td {
+    vertical-align: middle;
+    font-size: 0.9rem;
+    border-bottom-color: var(--fsmb-border-light);
+    color: var(--fsmb-text);
+}
+
+.table > tbody > tr:hover > td {
+    background-color: var(--fsmb-surface-hover);
+}
+
+.table-light {
+    --bs-table-bg: var(--fsmb-table-header-bg);
+    --bs-table-color: var(--fsmb-text-secondary);
+}
+
+/* Override Bootstrap table-hover for dark mode */
+[data-bs-theme="dark"] .table-hover > tbody > tr:hover > * {
+    --bs-table-hover-bg: var(--fsmb-surface-hover);
+    --bs-table-hover-color: var(--fsmb-text);
+}
+
+
+/* ============================================================
+   Badges
+   ============================================================ */
+.badge {
+    font-weight: 500;
+    letter-spacing: 0.3px;
+}
+
+
+/* ============================================================
+   Buttons – FSMB accent variants
+   ============================================================ */
+.btn-fsmb {
+    background-color: var(--fsmb-accent);
+    border-color: var(--fsmb-accent);
+    color: #ffffff;
+}
+
+.btn-fsmb:hover,
+.btn-fsmb:focus {
+    background-color: var(--fsmb-accent-hover);
+    border-color: var(--fsmb-accent-hover);
+    color: #ffffff;
+}
+
+.btn-outline-fsmb {
+    color: var(--fsmb-accent);
+    border-color: var(--fsmb-accent);
+    background: transparent;
+}
+
+.btn-outline-fsmb:hover {
+    background-color: var(--fsmb-accent);
+    border-color: var(--fsmb-accent);
+    color: #ffffff;
+}
+
+
+/* ============================================================
+   Forms
+   ============================================================ */
+.form-control,
+.form-select {
+    background-color: var(--fsmb-input-bg);
+    border-color: var(--fsmb-input-border);
+    color: var(--fsmb-text);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--fsmb-accent);
+    box-shadow: 0 0 0 0.2rem rgba(var(--fsmb-accent-rgb), 0.2);
+    background-color: var(--fsmb-input-bg);
+    color: var(--fsmb-text);
+}
+
+
+/* ============================================================
+   Progress bars
+   ============================================================ */
+.progress {
+    border-radius: 1rem;
+    background-color: var(--fsmb-border);
+}
+
+
+/* ============================================================
+   Footer
+   ============================================================ */
+.footer-fsmb {
+    background-color: var(--fsmb-footer-bg);
+    border-top: 3px solid var(--fsmb-accent);
+    color: var(--fsmb-footer-text);
+    padding: 1.5rem 0;
+    margin-top: 3rem;
+}
+
+.footer-fsmb a {
+    color: var(--fsmb-accent);
+    text-decoration: none;
+}
+
+.footer-fsmb a:hover {
+    color: var(--fsmb-accent-hover);
+}
+
+.footer-fsmb .footer-logo {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    opacity: 0.85;
+}
+
+
+/* ============================================================
+   Toast
+   ============================================================ */
+.toast {
+    border-radius: 0.5rem;
+}
+
+
+/* ============================================================
+   Action buttons
+   ============================================================ */
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+}
+
+
+/* ============================================================
+   Text utility overrides for theme
+   ============================================================ */
+.text-muted {
+    color: var(--fsmb-text-muted) !important;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--fsmb-text);
+}
+
+/* Accent text helper */
+.text-fsmb-accent {
+    color: var(--fsmb-accent) !important;
+}
+
+
+/* ============================================================
+   Dropdown menus (Dark mode fix)
+   ============================================================ */
+[data-bs-theme="dark"] .dropdown-menu {
+    background-color: var(--fsmb-surface);
+    border-color: var(--fsmb-border);
+}
+
+[data-bs-theme="dark"] .dropdown-item {
+    color: var(--fsmb-text);
+}
+
+[data-bs-theme="dark"] .dropdown-item:hover {
+    background-color: var(--fsmb-surface-hover);
+    color: var(--fsmb-accent);
+}
+
+
+/* ============================================================
+   Page-link / Pagination (Dark mode fix)
+   ============================================================ */
+[data-bs-theme="dark"] .page-link {
+    background-color: var(--fsmb-surface);
+    border-color: var(--fsmb-border);
+    color: var(--fsmb-text);
+}
+
+[data-bs-theme="dark"] .page-item.active .page-link {
+    background-color: var(--fsmb-accent);
+    border-color: var(--fsmb-accent);
+    color: #fff;
+}
+
+[data-bs-theme="dark"] .page-item.disabled .page-link {
+    background-color: var(--fsmb-bg-secondary);
+    border-color: var(--fsmb-border);
+    color: var(--fsmb-text-muted);
+}
+
+
+/* ============================================================
+   Alert (Dark mode fix)
+   ============================================================ */
+[data-bs-theme="dark"] .alert-danger {
+    background-color: rgba(220, 53, 69, 0.15);
+    border-color: rgba(220, 53, 69, 0.3);
+    color: #f5a5ae;
+}
+
+
+/* ============================================================
+   Badge in navbar
+   ============================================================ */
+.navbar-fsmb .badge {
+    background-color: var(--fsmb-accent) !important;
+    color: #fff !important;
+}
+
+
+/* ============================================================
+   Responsive tweaks
+   ============================================================ */
+@media (max-width: 768px) {
+    .table-responsive {
+        font-size: 0.85rem;
+    }
+    .card-body {
+        padding: 1rem;
+    }
+    .login-logo {
+        width: 90px;
+        height: 90px;
+    }
+}
+
+
+/* ============================================================
+   Adaptive Logo – Dark / Light Mode
+   ============================================================ */
+/* Navbar logo - make it visible and properly sized */
+.fsmb-logo-adaptive {
+    /* Remove harsh filter, use subtle drop-shadow instead */
+    filter: drop-shadow(0 0 1px rgba(255,255,255,0.3));
+    transition: filter 0.3s ease, transform 0.2s ease;
+    border-radius: 30px;
+    background: rgba(255,255,255,0.1);
+    
+}
+
+/* On hover, add glow effect */
+.navbar-fsmb .navbar-brand:hover .fsmb-logo-adaptive {
+    filter: drop-shadow(0 0 4px rgba(255,255,255,0.5));
+    transform: scale(1.05);
+}
+
+/* Dark mode adjustments */
+[data-bs-theme="dark"] .fsmb-logo-adaptive {
+    filter: drop-shadow(0 0 2px rgba(255,255,255,0.4));
+    opacity: 0.95;
+}
+
+/* Footer logo */
+.footer-fsmb .footer-logo {
+    filter: drop-shadow(0 0 2px rgba(255,255,255,0.2));
+    opacity: 0.9;
+}
+
+[data-bs-theme="dark"] .footer-fsmb .footer-logo {
+    opacity: 1;
+}
+
+
+/* ============================================================
+   Printing Toggle (Navbar)
+   ============================================================ */
+.printing-toggle-wrapper {
+    border-right: 1px solid rgba(255,255,255,0.15);
+    padding-right: 0.75rem;
+}
+
+.printing-toggle-wrapper .form-check-input {
+    cursor: pointer;
+    width: 2.2em;
+    height: 1.15em;
+    background-color: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.3);
+}
+
+.printing-toggle-wrapper .form-check-input:checked {
+    background-color: var(--fsmb-accent);
+    border-color: var(--fsmb-accent);
+}
+
+.printing-toggle-wrapper .form-check-input:focus {
+    box-shadow: 0 0 0 0.2rem rgba(var(--fsmb-accent-rgb), 0.3);
+    border-color: var(--fsmb-accent);
+}
+
+
+/* ============================================================
+   Smooth transitions for theme switch
+   ============================================================ */
+.card, .navbar-fsmb, .footer-fsmb,
+.form-control, .form-select, .table,
+.btn, .badge, .alert, .page-link {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+
+
+
+/* ============================================================
+   Kanban Board Layout
+   ============================================================ */
+.kanban-column {
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+}
+
+.kanban-body {
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(100vh - 400px);
+    min-height: 300px;
+}
+
+/* Kanban Column Headers */
+.kanban-pending .card-header {
+    border-left: 4px solid var(--bs-warning);
+}
+
+.kanban-processing .card-header {
+    border-left: 4px solid var(--bs-info);
+}
+
+.kanban-completed .card-header {
+    border-left: 4px solid var(--bs-success);
+}
+
+/* Kanban Cards */
+.kanban-card {
+    background-color: var(--fsmb-card-bg);
+    border: 1px solid var(--fsmb-border-light);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+    cursor: default;
+    display: flex;
+    flex-direction: column;
+}
+
+.kanban-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.kanban-card.pending {
+    border-left: 3px solid var(--bs-warning);
+}
+
+.kanban-card.processing {
+    border-left: 3px solid var(--bs-info);
+    animation: pulse-border 2s infinite;
+}
+
+.kanban-card.completed {
+    border-left: 3px solid var(--bs-success);
+}
+
+.kanban-card.error {
+    border-left: 3px solid var(--bs-danger);
+    background-color: rgba(var(--bs-danger-rgb), 0.05);
+}
+
+.kanban-card.cancelled {
+    border-left: 3px solid var(--bs-secondary);
+    opacity: 0.7;
+}
+
+@keyframes pulse-border {
+    0%, 100% { border-left-color: var(--bs-info); }
+    50% { border-left-color: var(--bs-primary); }
+}
+
+/* Order Filename */
+.order-filename {
+    font-size: 0.9rem;
+    font-weight: 500;
+    word-break: break-word;
+    color: var(--fsmb-text);
+}
+
+/* Empty Column State */
+.empty-column {
+    opacity: 0.7;
+}
+
+/* Stat Cards with accent borders */
+.stat-card-pending {
+    border-left: 4px solid var(--bs-warning) !important;
+}
+
+.stat-card-processing {
+    border-left: 4px solid var(--bs-info) !important;
+}
+
+.stat-card-success {
+    border-left: 4px solid var(--bs-success) !important;
+}
+
+.stat-card-error {
+    border-left: 4px solid var(--bs-danger) !important;
+}
+
+
+/* ============================================================
+   Spinner / Loading Animations
+   ============================================================ */
+.spinner-icon {
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+
+/* ============================================================
+   Progress Steps (Modal)
+   ============================================================ */
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.progress-steps .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+    opacity: 0.4;
+    transition: opacity 0.3s ease;
+}
+
+.progress-steps .step.active {
+    opacity: 1;
+}
+
+.progress-steps .step.completed {
+    opacity: 1;
+    color: var(--bs-success);
+}
+
+.progress-steps .step-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.progress-steps .step-label {
+    font-size: 0.7rem;
+    text-align: center;
+}
+
+.progress-steps .step.active .step-icon {
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+
+/* ============================================================
+   Progress Wrapper (Card inline)
+   ============================================================ */
+.progress-wrapper {
+    background-color: var(--fsmb-surface-hover);
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+}
+
+.progress-status {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+}
+
+
+/* ============================================================
+   Card Transitions
+   ============================================================ */
+.order-card {
+    transition: all 0.3s ease;
+}
+
+.order-card.fade-out {
+    opacity: 0;
+    transform: translateX(100px);
+}
+
+.order-card.moving-to-processing {
+    animation: slide-right 0.5s ease forwards;
+}
+
+.order-card.moving-to-completed {
+    animation: slide-right 0.5s ease forwards;
+}
+
+@keyframes slide-right {
+    0% { transform: translateX(0); opacity: 1; }
+    100% { transform: translateX(50px); opacity: 0; }
+}
+
+
+/* ============================================================
+   Mobile Responsive - Kanban stacking
+   ============================================================ */
+@media (max-width: 991.98px) {
+    .kanban-body {
+        max-height: 300px;
+        min-height: 200px;
+    }
+    
+    .kanban-column {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .kanban-card {
+        padding: 0.5rem;
+    }
+    
+    .order-filename {
+        font-size: 0.8rem;
+    }
+    
+    .progress-steps .step-label {
+        font-size: 0.6rem;
+    }
+}
+
+
+/* ============================================================
+   Bulk Action Bar
+   ============================================================ */
+.bulk-action-bar {
+    position: sticky;
+    top: 70px;
+    z-index: 100;
+    background: linear-gradient(135deg, var(--fsmb-primary) 0%, var(--fsmb-secondary) 100%);
+    animation: slideDown 0.3s ease;
+}
+
+.bulk-action-bar .card-body {
+    color: #fff;
+}
+
+[data-bs-theme="dark"] .bulk-action-bar {
+    background: linear-gradient(135deg, var(--fsmb-surface) 0%, var(--fsmb-bg-secondary) 100%);
+    border: 1px solid var(--fsmb-accent);
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Checkbox Styling */
+.order-checkbox {
+    cursor: pointer;
+    width: 1.1em;
+    height: 1.1em;
+}
+
+.order-checkbox:checked {
+    background-color: var(--fsmb-accent);
+    border-color: var(--fsmb-accent);
+}
+
+.order-checkbox:focus {
+    box-shadow: 0 0 0 0.2rem rgba(var(--fsmb-accent-rgb), 0.25);
+    border-color: var(--fsmb-accent);
+}
+
+/* Header checkbox for "select all" */
+.card-header .form-check-input {
+    cursor: pointer;
+    width: 1.2em;
+    height: 1.2em;
+}
+
+.card-header .form-check-input:checked {
+    background-color: var(--fsmb-accent);
+    border-color: var(--fsmb-accent);
+}
+
+
+/* ============================================================
+   Processed / Ready to Print Status
+   ============================================================ */
+.kanban-card.processed {
+    border-left: 3px solid var(--bs-primary);
+    background-color: rgba(13, 110, 253, 0.05);
+}
+
+.kanban-card.processed:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+/* Print button styling */
+.btn-print-order {
+    transition: all 0.2s ease;
+}
+
+.btn-print-order:hover {
+    transform: scale(1.02);
+}
+
+
+/* ============================================================
+   Status Indicators
+   ============================================================ */
+.status-pulse {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--bs-info);
+    animation: status-pulse 1.5s ease-in-out infinite;
+    margin-right: 0.5rem;
+}
+
+@keyframes status-pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.5;
+        transform: scale(1.2);
+    }
+}
+
+
+/* ============================================================
+   Improved Toast Positioning
+   ============================================================ */
+#toastContainer {
+    z-index: 1100;
+}
+
+#toastContainer .toast {
+    min-width: 300px;
+}

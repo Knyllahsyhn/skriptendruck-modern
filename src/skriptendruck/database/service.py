@@ -1,7 +1,8 @@
 """Datenbank-Service für SQLAlchemy-Operationen."""
+import threading
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session, sessionmaker
@@ -14,25 +15,73 @@ logger = get_logger("database")
 
 
 class DatabaseService:
-    """Service für Datenbank-Operationen."""
-    
+    """Service für Datenbank-Operationen.
+
+    Verwendet ein Singleton-Pattern pro db_path, sodass für denselben
+    Datenbankpfad immer dieselbe Engine/Session-Factory verwendet wird.
+    ``Base.metadata.create_all`` wird nur einmal pro Pfad ausgeführt.
+    """
+
+    _instances: Dict[str, "DatabaseService"] = {}
+    _lock = threading.Lock()
+
+    @staticmethod
+    def _resolve_db_path(db_path: Optional[Path]) -> Path:
+        """
+        Ermittelt den absoluten Datenbankpfad.
+        
+        - Wenn db_path explizit angegeben wird, wird dieser verwendet
+        - Sonst wird settings.database_path verwendet (standardmäßig absolut)
+        - Bei relativem Pfad wird das Projekt-Root als Basis verwendet
+        """
+        from ..config.settings import PROJECT_ROOT
+        
+        if db_path is None:
+            db_path = settings.database_path
+        
+        # Sicherstellen, dass der Pfad absolut ist
+        if not db_path.is_absolute():
+            db_path = PROJECT_ROOT / db_path
+        
+        return db_path
+
+    def __new__(cls, db_path: Optional[Path] = None) -> "DatabaseService":
+        resolved_path = cls._resolve_db_path(db_path)
+
+        key = str(resolved_path)
+        with cls._lock:
+            if key not in cls._instances:
+                instance = super().__new__(cls)
+                instance._initialized = False
+                cls._instances[key] = instance
+            return cls._instances[key]
+
     def __init__(self, db_path: Optional[Path] = None) -> None:
         """
         Initialisiert den DatabaseService.
-        
+
         Args:
             db_path: Pfad zur SQLite-Datenbank (optional)
         """
-        if db_path is None:
-            db_path = settings.base_path / "skriptendruck.db"
+        if getattr(self, "_initialized", False):
+            return
+
+        self.db_path = self._resolve_db_path(db_path)
         
-        self.db_path = db_path
-        self.engine = create_engine(f"sqlite:///{db_path}", echo=False)
+        # Sicherstellen, dass das Verzeichnis existiert
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        self.engine = create_engine(
+            f"sqlite:///{self.db_path}",
+            echo=False,
+            pool_pre_ping=True,
+        )
         self.SessionLocal = sessionmaker(bind=self.engine)
-        
-        # Tabellen erstellen falls nicht vorhanden
+
+        # Tabellen erstellen falls nicht vorhanden – nur einmal
         Base.metadata.create_all(self.engine)
-        logger.info(f"Datenbank initialisiert: {db_path}")
+        logger.info(f"Datenbank initialisiert: {self.db_path}")
+        self._initialized = True
     
     def save_order(self, order: Order) -> OrderRecord:
         """

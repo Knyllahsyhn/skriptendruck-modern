@@ -9,6 +9,9 @@ from typing import Optional
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+# Projekt-Root ermitteln (3 Ebenen über config/settings.py)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
+
 
 class Settings(BaseSettings):
     """Zentrale Konfiguration für das Skriptendruckprogramm."""
@@ -17,12 +20,22 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra='allow'
     )
     
     # Pfade
+    # BASE_PATH muss auf das Netzlaufwerk (oder lokalen Ordner) zeigen,
+    # unter dem die Unterordner 01_Auftraege, 02_Druckfertig etc. liegen.
+    # Unterstützt:
+    #   - Gemapptes Netzlaufwerk:  H:/stud/fsmb/03_Dienste/01_Skriptendruck
+    #   - UNC-Pfad:                \\server\share\skriptendruck
+    #   - Lokaler Pfad:            C:/skriptendruck
     base_path: Path = Field(
         default=Path("H:/stud/fsmb/03_Dienste/01_Skriptendruck"),
-        description="Basispfad für Ordnerstruktur (01_Auftraege, 02_Druckfertig, etc.)"
+        description=(
+            "Basispfad für Ordnerstruktur (01_Auftraege, 02_Druckfertig, etc.). "
+            "Kann ein lokaler Pfad, ein gemapptes Netzlaufwerk oder ein UNC-Pfad sein."
+        ),
     )
     
     # LDAP Konfiguration
@@ -79,9 +92,11 @@ class Settings(BaseSettings):
     )
     
     # Datenbank
+    # Der Default-Pfad ist relativ zum Projekt-Root (data/skriptendruck.db)
+    # Dies funktioniert auch bei Windows-Services, wo das Working Directory variieren kann
     database_path: Path = Field(
-        default=Path("skriptendruck.db"),
-        description="Pfad zur SQLite-Datenbank"
+        default=PROJECT_ROOT / "data" / "skriptendruck.db",
+        description="Pfad zur SQLite-Datenbank (absoluter Pfad empfohlen)"
     )
     use_database: bool = Field(
         default=True,
@@ -136,6 +151,15 @@ class Settings(BaseSettings):
         description="Pfad zur SumatraPDF.exe"
     )
     auto_print: bool = Field(default=False, description="Sollen Aufträge sofort gedruckt werden?")
+    enable_printing: bool = Field(
+        default=False,
+        description=(
+            "Drucken im Web-Dashboard aktivieren. "
+            "Wenn True, wird nach dem PDF-Merge automatisch an den "
+            "konfigurierten Drucker gesendet (SumatraPDF Silent-Print). "
+            "PaperCut ordnet die Aufträge automatisch dem Service-Account zu."
+        ),
+    )
 
 
 # Globale Settings-Instanz

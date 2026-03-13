@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block title %}Anmelden{% endblock %}
+
+{% block content %}
+<div class="login-wrapper d-flex align-items-center justify-content-center min-vh-100">
+    <div class="login-card card border-0" style="max-width: 440px; width: 100%;">
+        <div class="card-body p-5">
+            <!-- Logo / Header -->
+            <div class="text-center mb-4">
+                <img src="/static/img/fsmb_logo.png" alt="FSMB Regensburg" class="login-logo mb-3">
+                <h3 class="fw-bold">Skriptendruck</h3>
+                <p class="text-muted small mb-1">Fachschaft Maschinenbau – OTH Regensburg</p>
+                <p class="text-muted small">Willkommen im Druckauftragssystem der FSMB</p>
+            </div>
+
+            <!-- Dark Mode Toggle on login page -->
+            <div class="text-center mb-3">
+                <button class="btn btn-sm btn-outline-secondary" id="loginThemeToggle" title="Dark/Light Mode">
+                    <i class="bi bi-moon-fill me-1" id="loginThemeIcon"></i> Design wechseln
+                </button>
+            </div>
+
+            {% if error %}
+            <div class="alert alert-danger d-flex align-items-center py-2" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <span>{{ error }}</span>
+            </div>
+            {% endif %}
+
+            <form method="POST" action="/login" autocomplete="on">
+                <div class="mb-3">
+                    <label for="username" class="form-label fw-semibold">
+                        <i class="bi bi-person me-1"></i> RZ-Kennung / Benutzername
+                    </label>
+                    <input type="text" class="form-control form-control-lg" id="username" name="username"
+                           placeholder="z.B. abc12345" required autofocus autocomplete="username">
+                </div>
+                <div class="mb-4">
+                    <label for="password" class="form-label fw-semibold">
+                        <i class="bi bi-lock me-1"></i> Passwort
+                    </label>
+                    <input type="password" class="form-control form-control-lg" id="password" name="password"
+                           placeholder="Passwort" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="btn btn-fsmb btn-lg w-100">
+                    <i class="bi bi-box-arrow-in-right me-2"></i> Anmelden
+                </button>
+            </form>
+
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    <i class="bi bi-shield-lock me-1"></i>
+                    Zugang nur für Mitglieder der Gruppen<br>
+                    <strong>Vorstand</strong>, <strong>IT</strong> oder <strong>Skriptendruck</strong>
+                </small>
+            </div>
+
+            <hr class="my-3" style="border-color: var(--fsmb-border);">
+
+            <div class="text-center">
+                <small class="text-muted opacity-75">
+                    &copy; 2026 FSMB Regensburg e.V.
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
