@@ -23,7 +23,7 @@
     <!-- Statistik-Karten -->
     <div class="row g-3 mb-4">
         <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card border-0 shadow-sm h-100 stat-card-pending">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="bg-warning bg-opacity-10 rounded-3 p-3 me-3">
@@ -31,29 +31,29 @@
                         </div>
                         <div>
                             <div class="text-muted small">Ausstehend</div>
-                            <div class="fs-3 fw-bold text-warning">{{ pending_count }}</div>
+                            <div class="fs-3 fw-bold text-warning" id="stat-pending">{{ pending_count }}</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card border-0 shadow-sm h-100 stat-card-processing">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
-                        <div class="bg-primary bg-opacity-10 rounded-3 p-3 me-3">
-                            <i class="bi bi-inbox-fill text-primary fs-4"></i>
+                        <div class="bg-info bg-opacity-10 rounded-3 p-3 me-3">
+                            <i class="bi bi-gear-fill text-info fs-4 spinner-icon"></i>
                         </div>
                         <div>
-                            <div class="text-muted small">Aufträge gesamt</div>
-                            <div class="fs-3 fw-bold">{{ stats.total_orders }}</div>
+                            <div class="text-muted small">In Verarbeitung</div>
+                            <div class="fs-3 fw-bold text-info" id="stat-processing">{{ processing_count }}</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card border-0 shadow-sm h-100 stat-card-success">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="bg-success bg-opacity-10 rounded-3 p-3 me-3">
@@ -61,14 +61,14 @@
                         </div>
                         <div>
                             <div class="text-muted small">Erfolgreich</div>
-                            <div class="fs-3 fw-bold text-success">{{ stats.successful_orders }}</div>
+                            <div class="fs-3 fw-bold text-success" id="stat-success">{{ stats.successful_orders }}</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="col-sm-6 col-xl-3">
-            <div class="card border-0 shadow-sm h-100">
+            <div class="card border-0 shadow-sm h-100 stat-card-error">
                 <div class="card-body">
                     <div class="d-flex align-items-center">
                         <div class="bg-danger bg-opacity-10 rounded-3 p-3 me-3">
@@ -76,7 +76,7 @@
                         </div>
                         <div>
                             <div class="text-muted small">Fehler</div>
-                            <div class="fs-3 fw-bold text-danger">{{ stats.error_orders }}</div>
+                            <div class="fs-3 fw-bold text-danger" id="stat-error">{{ stats.error_orders }}</div>
                         </div>
                     </div>
                 </div>
@@ -84,49 +84,41 @@
         </div>
     </div>
 
-    <!-- ========== AUSSTEHENDE AUFTRÄGE (prominent oben) ========== -->
-    <div class="card border-0 shadow-sm mb-4 {% if pending_orders %}border-start border-warning border-4{% endif %}">
-        <div class="card-header border-bottom d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-semibold">
-                <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Ausstehende Aufträge
-                {% if pending_orders %}
-                <span class="badge bg-warning text-dark ms-2">{{ pending_count }}</span>
-                {% endif %}
-            </h5>
-            {% if pending_orders %}
-            <button class="btn btn-sm btn-warning fw-semibold" id="btnStartAll" onclick="startAllOrders(this)">
-                <i class="bi bi-play-fill me-1"></i> Alle starten ({{ pending_count }})
-            </button>
-            {% endif %}
-        </div>
-        <div class="card-body p-0">
-            {% if pending_orders %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0" id="pendingOrdersTable">
-                    <thead class="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>Datum</th>
-                            <th>Dateiname</th>
-                            <th>Status</th>
-                            <th class="text-end">Aktionen</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+    <!-- ========== KANBAN BOARD - 3 Spalten ========== -->
+    <div class="row g-3" id="kanban-board">
+        <!-- Spalte 1: Ausstehend -->
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm h-100 kanban-column kanban-pending">
+                <div class="card-header border-bottom d-flex justify-content-between align-items-center bg-warning bg-opacity-10">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="bi bi-hourglass-split text-warning me-2"></i>Ausstehend
+                        <span class="badge bg-warning text-dark ms-2" id="badge-pending">{{ pending_count }}</span>
+                    </h5>
+                    {% if pending_orders %}
+                    <button class="btn btn-sm btn-warning fw-semibold" id="btnStartAll" onclick="startAllOrders(this)">
+                        <i class="bi bi-play-fill me-1"></i> Alle starten
+                    </button>
+                    {% endif %}
+                </div>
+                <div class="card-body kanban-body p-2" id="column-pending">
+                    {% if pending_orders %}
                         {% for order in pending_orders %}
-                        <tr id="order-row-{{ order.order_id }}">
-                            <td><span class="badge bg-secondary">{{ order.order_id }}</span></td>
-                            <td class="text-nowrap"><small>{{ order.created_at }}</small></td>
-                            <td>
-                                <span class="text-truncate d-inline-block" style="max-width: 350px;" title="{{ order.filename }}">
-                                    {{ order.filename }}
-                                </span>
-                            </td>
-                            <td>
-                                <span class="badge bg-warning text-dark order-status-badge">Ausstehend</span>
-                            </td>
-                            <td class="text-end text-nowrap">
-                                <button class="btn btn-sm btn-success me-1 btn-start-order"
+                        <div class="kanban-card order-card pending" id="order-card-{{ order.order_id }}" data-order-id="{{ order.order_id }}">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-secondary">#{{ order.order_id }}</span>
+                                <small class="text-muted">{{ order.created_at }}</small>
+                            </div>
+                            <div class="order-filename mb-2" title="{{ order.filename }}">
+                                <i class="bi bi-file-pdf text-danger me-1"></i>{{ order.filename|truncate(40) }}
+                            </div>
+                            {% if order.username %}
+                            <div class="small text-muted mb-2">
+                                <i class="bi bi-person me-1"></i>{{ order.first_name or '' }} {{ order.last_name or '' }}
+                                <br><small class="text-muted">{{ order.username }}</small>
+                            </div>
+                            {% endif %}
+                            <div class="d-flex gap-2 mt-auto">
+                                <button class="btn btn-sm btn-success flex-grow-1 btn-start-order"
                                         onclick="startOrder({{ order.order_id }}, this)"
                                         title="Freigeben & Verarbeiten">
                                     <i class="bi bi-play-fill"></i> Starten
@@ -136,94 +128,230 @@
                                         title="Löschen">
                                     <i class="bi bi-trash"></i>
                                 </button>
-                            </td>
-                        </tr>
+                            </div>
+                        </div>
                         {% endfor %}
-                    </tbody>
-                </table>
+                    {% else %}
+                        <div class="text-center py-4 text-muted empty-column">
+                            <i class="bi bi-check-circle fs-2 d-block mb-2 text-success"></i>
+                            <p class="mb-0 small">Keine ausstehenden Aufträge</p>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
-            {% else %}
-            <div class="text-center py-4 text-muted">
-                <i class="bi bi-check-circle fs-2 d-block mb-2 text-success"></i>
-                <p class="mb-0">Keine ausstehenden Aufträge – alles erledigt!</p>
-            </div>
-            {% endif %}
         </div>
-    </div>
 
-    <!-- ========== LETZTE VERARBEITETE AUFTRÄGE ========== -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-header border-bottom d-flex justify-content-between align-items-center">
-            <h5 class="mb-0 fw-semibold"><i class="bi bi-clock-history me-2"></i>Letzte verarbeitete Aufträge</h5>
-            <a href="/orders" class="btn btn-sm btn-outline-primary">Alle anzeigen <i class="bi bi-arrow-right"></i></a>
-        </div>
-        <div class="card-body p-0">
-            {% if recent_orders %}
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>#</th>
-                            <th>Datum</th>
-                            <th>Dateiname</th>
-                            <th>Benutzer</th>
-                            <th>Seiten</th>
-                            <th>Preis</th>
-                            <th>Status</th>
-                            <th class="text-end">Aktionen</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for order in recent_orders %}
-                        <tr id="order-row-{{ order.order_id }}">
-                            <td><span class="badge bg-secondary">{{ order.order_id }}</span></td>
-                            <td class="text-nowrap"><small>{{ order.created_at }}</small></td>
-                            <td>
-                                <span class="text-truncate d-inline-block" style="max-width: 250px;" title="{{ order.filename }}">
-                                    {{ order.filename }}
-                                </span>
-                            </td>
-                            <td>
-                                {% if order.first_name and order.last_name %}
-                                    {{ order.first_name }} {{ order.last_name }}
-                                    <br><small class="text-muted">{{ order.username }}</small>
-                                {% else %}
-                                    {{ order.username or '–' }}
-                                {% endif %}
-                            </td>
-                            <td>{{ order.page_count or '–' }}</td>
-                            <td>
-                                {% if order.total_price is not none %}
-                                    {{ "%.2f"|format(order.total_price) }} €
-                                {% else %}
-                                    –
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% set label, cls = get_status_badge(order.status) %}
-                                <span class="badge bg-{{ cls }}{% if cls == 'warning' %} text-dark{% endif %}" title="{{ order.error_message or '' }}">
-                                    {{ label }}
-                                </span>
-                            </td>
-                            <td class="text-end text-nowrap">
-                                <button class="btn btn-sm btn-outline-danger"
-                                        onclick="deleteOrder({{ order.order_id }})"
-                                        title="Löschen">
-                                    <i class="bi bi-trash"></i>
+        <!-- Spalte 2: In Verarbeitung -->
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm h-100 kanban-column kanban-processing">
+                <div class="card-header border-bottom d-flex justify-content-between align-items-center bg-info bg-opacity-10">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="bi bi-gear-fill text-info me-2 spinner-icon"></i>In Verarbeitung
+                        <span class="badge bg-info ms-2" id="badge-processing">{{ processing_count }}</span>
+                    </h5>
+                </div>
+                <div class="card-body kanban-body p-2" id="column-processing">
+                    {% if processing_orders %}
+                        {% for order in processing_orders %}
+                        <div class="kanban-card order-card processing" id="order-card-{{ order.order_id }}" data-order-id="{{ order.order_id }}">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-info">#{{ order.order_id }}</span>
+                                <small class="text-muted">{{ order.created_at }}</small>
+                            </div>
+                            <div class="order-filename mb-2" title="{{ order.filename }}">
+                                <i class="bi bi-file-pdf text-danger me-1"></i>{{ order.filename|truncate(40) }}
+                            </div>
+                            <!-- Progress Bar -->
+                            <div class="progress-wrapper mb-2">
+                                <div class="progress" style="height: 8px;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-info" 
+                                         role="progressbar" style="width: 50%;" id="progress-{{ order.order_id }}"></div>
+                                </div>
+                                <small class="text-muted progress-status" id="status-{{ order.order_id }}">
+                                    <i class="bi bi-arrow-repeat spin me-1"></i>Verarbeite...
+                                </small>
+                            </div>
+                            <div class="d-flex gap-2 mt-auto">
+                                <button class="btn btn-sm btn-outline-warning flex-grow-1"
+                                        onclick="cancelOrder({{ order.order_id }}, this)"
+                                        title="Abbrechen">
+                                    <i class="bi bi-x-circle"></i> Abbrechen
                                 </button>
-                            </td>
-                        </tr>
+                            </div>
+                        </div>
                         {% endfor %}
-                    </tbody>
-                </table>
+                    {% else %}
+                        <div class="text-center py-4 text-muted empty-column">
+                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                            <p class="mb-0 small">Keine Aufträge in Verarbeitung</p>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
-            {% else %}
-            <div class="text-center py-5 text-muted">
-                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                <p>Noch keine verarbeiteten Aufträge vorhanden.</p>
+        </div>
+
+        <!-- Spalte 3: Abgeschlossen -->
+        <div class="col-12 col-lg-4">
+            <div class="card border-0 shadow-sm h-100 kanban-column kanban-completed">
+                <div class="card-header border-bottom d-flex justify-content-between align-items-center bg-success bg-opacity-10">
+                    <h5 class="mb-0 fw-semibold">
+                        <i class="bi bi-check-circle-fill text-success me-2"></i>Abgeschlossen
+                        <span class="badge bg-success ms-2" id="badge-completed">{{ completed_count }}</span>
+                    </h5>
+                    <a href="/orders" class="btn btn-sm btn-outline-primary">
+                        Alle anzeigen <i class="bi bi-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="card-body kanban-body p-2" id="column-completed">
+                    {% if completed_orders %}
+                        {% for order in completed_orders %}
+                        <div class="kanban-card order-card {{ 'error' if 'error' in order.status else 'completed' }}" 
+                             id="order-card-{{ order.order_id }}" data-order-id="{{ order.order_id }}">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge {{ 'bg-danger' if 'error' in order.status else 'bg-success' }}">
+                                    #{{ order.order_id }}
+                                </span>
+                                <small class="text-muted">{{ order.processed_at or order.created_at }}</small>
+                            </div>
+                            <div class="order-filename mb-2" title="{{ order.filename }}">
+                                <i class="bi bi-file-pdf text-danger me-1"></i>{{ order.filename|truncate(40) }}
+                            </div>
+                            {% if order.username %}
+                            <div class="small text-muted mb-1">
+                                <i class="bi bi-person me-1"></i>{{ order.first_name or '' }} {{ order.last_name or '' }}
+                            </div>
+                            {% endif %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    {% if order.page_count %}
+                                    <small class="text-muted"><i class="bi bi-file-text me-1"></i>{{ order.page_count }} Seiten</small>
+                                    {% endif %}
+                                    {% if order.total_price is not none %}
+                                    <small class="text-success fw-bold ms-2">{{ "%.2f"|format(order.total_price) }} €</small>
+                                    {% endif %}
+                                </div>
+                                <span class="badge {{ 'bg-danger' if 'error' in order.status else 'bg-success' }}">
+                                    {% if 'error' in order.status %}
+                                        <i class="bi bi-x-circle me-1"></i>Fehler
+                                    {% elif order.status == 'cancelled' %}
+                                        <i class="bi bi-slash-circle me-1"></i>Abgebrochen
+                                    {% else %}
+                                        <i class="bi bi-check me-1"></i>Fertig
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% if order.error_message %}
+                            <div class="alert alert-danger py-1 px-2 mt-2 mb-0 small">
+                                <i class="bi bi-exclamation-triangle me-1"></i>{{ order.error_message|truncate(80) }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4 text-muted empty-column">
+                            <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+                            <p class="mb-0 small">Noch keine abgeschlossenen Aufträge</p>
+                        </div>
+                    {% endif %}
+                </div>
             </div>
-            {% endif %}
         </div>
     </div>
 </div>
+
+<!-- Progress Modal für Verarbeitungsfortschritt -->
+<div class="modal fade" id="progressModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="bi bi-gear-fill spinner-icon me-2"></i>
+                    <span id="progressModalTitle">Auftrag wird verarbeitet...</span>
+                </h5>
+            </div>
+            <div class="modal-body">
+                <div id="progressModalOrderInfo" class="mb-3">
+                    <strong>Auftrag #<span id="progressOrderId"></span></strong>
+                    <div class="text-muted small" id="progressFilename"></div>
+                </div>
+                
+                <!-- Schritt-Anzeige -->
+                <div class="progress-steps mb-3">
+                    <div class="step" id="step-analyze">
+                        <i class="bi bi-search step-icon"></i>
+                        <span class="step-label">PDF analysieren</span>
+                    </div>
+                    <div class="step" id="step-cover">
+                        <i class="bi bi-card-heading step-icon"></i>
+                        <span class="step-label">Deckblatt erstellen</span>
+                    </div>
+                    <div class="step" id="step-print">
+                        <i class="bi bi-printer step-icon"></i>
+                        <span class="step-label">Drucken</span>
+                    </div>
+                    <div class="step" id="step-done">
+                        <i class="bi bi-check-circle step-icon"></i>
+                        <span class="step-label">Fertig</span>
+                    </div>
+                </div>
+                
+                <!-- Fortschrittsbalken -->
+                <div class="progress mb-2" style="height: 20px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                         role="progressbar" id="modalProgressBar" style="width: 0%;">0%</div>
+                </div>
+                
+                <div class="text-center text-muted small" id="progressMessage">
+                    Initialisiere...
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts_extra %}
+<script>
+// Auto-Refresh alle 30 Sekunden für Live-Updates
+let autoRefreshInterval = null;
+let isProcessing = false;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-Refresh starten wenn Aufträge in Verarbeitung sind
+    {% if processing_count > 0 %}
+    startAutoRefresh();
+    {% endif %}
+});
+
+function startAutoRefresh() {
+    if (!autoRefreshInterval) {
+        autoRefreshInterval = setInterval(function() {
+            if (!isProcessing) {
+                refreshKanbanBoard();
+            }
+        }, 5000); // Alle 5 Sekunden aktualisieren
+    }
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+    }
+}
+
+async function refreshKanbanBoard() {
+    try {
+        // Statistiken aktualisieren via API
+        const res = await fetch('/api/statistics');
+        if (res.ok) {
+            const stats = await res.json();
+            // Update stat cards if needed
+        }
+        // Seite nur bei Änderungen neu laden
+    } catch (err) {
+        console.error('Refresh Fehler:', err);
+    }
+}
+</script>
 {% endblock %}

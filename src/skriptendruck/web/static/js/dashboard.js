@@ -1,6 +1,14 @@
 /**
  * Skriptendruck Dashboard – JavaScript
  * FSMB Regensburg e.V.
+ * 
+ * Features:
+ * - Dark/Light Mode Toggle
+ * - Printing Toggle (localStorage)
+ * - Order Actions (Start, Cancel, Delete)
+ * - Bulk Actions
+ * - Progress Tracking
+ * - Auto-Refresh for Processing Orders
  */
 
 /* ============================================================
@@ -149,15 +157,87 @@ function setButtonError(btn) {
 
 
 /* ============================================================
-   Order Actions (NO confirm popups)
+   Progress Modal Management
+   ============================================================ */
+
+let progressModal = null;
+let progressPollingInterval = null;
+
+function showProgressModal(orderId, filename) {
+    const modalEl = document.getElementById('progressModal');
+    if (!modalEl) return;
+    
+    document.getElementById('progressOrderId').textContent = orderId;
+    document.getElementById('progressFilename').textContent = filename;
+    document.getElementById('progressMessage').textContent = 'Initialisiere...';
+    document.getElementById('modalProgressBar').style.width = '0%';
+    document.getElementById('modalProgressBar').textContent = '0%';
+    
+    // Reset steps
+    ['step-analyze', 'step-cover', 'step-print', 'step-done'].forEach(function(id) {
+        document.getElementById(id).classList.remove('active', 'completed');
+    });
+    document.getElementById('step-analyze').classList.add('active');
+    
+    progressModal = new bootstrap.Modal(modalEl);
+    progressModal.show();
+}
+
+function updateProgressModal(step, progress, message) {
+    const progressBar = document.getElementById('modalProgressBar');
+    const messageEl = document.getElementById('progressMessage');
+    
+    if (progressBar) {
+        progressBar.style.width = progress + '%';
+        progressBar.textContent = progress + '%';
+    }
+    
+    if (messageEl) {
+        messageEl.textContent = message;
+    }
+    
+    // Update steps
+    const steps = ['analyze', 'cover', 'print', 'done'];
+    const currentIndex = steps.indexOf(step);
+    
+    steps.forEach(function(s, idx) {
+        const stepEl = document.getElementById('step-' + s);
+        if (!stepEl) return;
+        
+        stepEl.classList.remove('active', 'completed');
+        if (idx < currentIndex) {
+            stepEl.classList.add('completed');
+        } else if (idx === currentIndex) {
+            stepEl.classList.add('active');
+        }
+    });
+}
+
+function hideProgressModal() {
+    if (progressModal) {
+        progressModal.hide();
+        progressModal = null;
+    }
+    if (progressPollingInterval) {
+        clearInterval(progressPollingInterval);
+        progressPollingInterval = null;
+    }
+}
+
+
+/* ============================================================
+   Order Actions
    ============================================================ */
 
 /**
- * Startet einen einzelnen Auftrag – OHNE Bestätigungs-Popup.
- * Zeigt Spinner während der Verarbeitung, dann Erfolg/Fehler-Toast.
+ * Startet einen einzelnen Auftrag mit Fortschrittsanzeige.
  */
 async function startOrder(orderId, btn) {
     setButtonLoading(btn, true);
+    
+    // Card-Element finden
+    const card = document.getElementById('order-card-' + orderId);
+    const filename = card ? card.querySelector('.order-filename')?.textContent?.trim() : 'Auftrag #' + orderId;
 
     try {
         var res = await fetch('/api/orders/' + orderId + '/start', {
@@ -169,35 +249,67 @@ async function startOrder(orderId, btn) {
 
         if (res.ok && data.success) {
             showToast(data.message || 'Auftrag #' + orderId + ' erfolgreich verarbeitet', 'success');
-
-            // Update row status badge
-            var row = document.getElementById('order-row-' + orderId);
-            if (row) {
-                var badge = row.querySelector('.order-status-badge');
-                if (badge) {
-                    badge.className = 'badge bg-success order-status-badge';
-                    badge.textContent = 'Verarbeitet';
-                }
-                // Fade out from pending table after a moment
-                setTimeout(function () {
-                    row.style.transition = 'opacity 0.4s';
-                    row.style.opacity = '0';
-                    setTimeout(function () { row.remove(); updatePendingCount(); }, 400);
-                }, 1200);
+            
+            // Card zur Completed-Spalte verschieben mit Animation
+            if (card) {
+                card.classList.add('moving-to-completed');
+                setTimeout(function() {
+                    card.remove();
+                    updateColumnCounts();
+                    // Nach kurzer Verzögerung Seite neu laden für aktuelle Daten
+                    setTimeout(function() { location.reload(); }, 500);
+                }, 500);
             }
             setButtonSuccess(btn);
         } else {
             showToast(data.error || 'Fehler beim Verarbeiten', 'danger');
-            // Update badge to error
-            var row = document.getElementById('order-row-' + orderId);
-            if (row) {
-                var badge = row.querySelector('.order-status-badge');
-                if (badge) {
-                    badge.className = 'badge bg-danger order-status-badge';
-                    badge.textContent = 'Fehler';
-                    badge.title = data.error || '';
-                }
+            
+            // Card als Error markieren
+            if (card) {
+                card.classList.remove('pending');
+                card.classList.add('error');
             }
+            setButtonError(btn);
+        }
+    } catch (err) {
+        showToast('Netzwerkfehler: ' + err.message, 'danger');
+        setButtonLoading(btn, false);
+    }
+}
+
+/**
+ * Bricht einen Auftrag ab (pending oder processing).
+ */
+async function cancelOrder(orderId, btn) {
+    if (!confirm('Auftrag #' + orderId + ' wirklich abbrechen?')) return;
+    
+    setButtonLoading(btn, true);
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span> Abbrechen…';
+
+    try {
+        var res = await fetch('/api/orders/' + orderId + '/cancel', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
+        var data = await res.json();
+
+        if (res.ok && data.success) {
+            showToast(data.message || 'Auftrag #' + orderId + ' abgebrochen', 'warning');
+            
+            // Card entfernen und Seite aktualisieren
+            const card = document.getElementById('order-card-' + orderId);
+            if (card) {
+                card.classList.add('fade-out');
+                setTimeout(function() {
+                    card.remove();
+                    updateColumnCounts();
+                }, 300);
+            }
+            
+            // Nach kurzer Verzögerung neu laden
+            setTimeout(function() { location.reload(); }, 1000);
+        } else {
+            showToast(data.error || 'Fehler beim Abbrechen', 'danger');
             setButtonError(btn);
         }
     } catch (err) {
@@ -218,11 +330,13 @@ async function deleteOrder(orderId) {
 
         if (res.ok && data.success) {
             showToast(data.message, 'success');
-            var row = document.getElementById('order-row-' + orderId);
-            if (row) {
-                row.style.transition = 'opacity 0.3s';
-                row.style.opacity = '0';
-                setTimeout(function () { row.remove(); updatePendingCount(); }, 300);
+            var card = document.getElementById('order-card-' + orderId);
+            if (card) {
+                card.classList.add('fade-out');
+                setTimeout(function () { 
+                    card.remove(); 
+                    updateColumnCounts(); 
+                }, 300);
             }
         } else {
             showToast(data.error || 'Fehler beim Löschen', 'danger');
@@ -256,28 +370,24 @@ async function startAllOrders(btn) {
         if (res.ok && data.success) {
             showToast(data.message, data.fail_count > 0 ? 'warning' : 'success');
 
-            // Update individual rows based on results
+            // Update individual cards based on results
             if (data.results) {
                 data.results.forEach(function (r) {
-                    var row = document.getElementById('order-row-' + r.order_id);
-                    if (row) {
-                        var badge = row.querySelector('.order-status-badge');
-                        if (badge) {
-                            if (r.success) {
-                                badge.className = 'badge bg-success order-status-badge';
-                                badge.textContent = 'Verarbeitet';
-                            } else {
-                                badge.className = 'badge bg-danger order-status-badge';
-                                badge.textContent = 'Fehler';
-                                badge.title = r.message || '';
-                            }
+                    var card = document.getElementById('order-card-' + r.order_id);
+                    if (card) {
+                        if (r.success) {
+                            card.classList.remove('pending');
+                            card.classList.add('completed', 'moving-to-completed');
+                        } else {
+                            card.classList.remove('pending');
+                            card.classList.add('error');
                         }
                     }
                 });
             }
 
             // Reload after short delay to refresh everything
-            setTimeout(function () { location.reload(); }, 2500);
+            setTimeout(function () { location.reload(); }, 2000);
         } else {
             showToast(data.error || 'Fehler bei der Bulk-Verarbeitung', 'danger');
             setButtonLoading(btn, false);
@@ -409,25 +519,88 @@ function showScanDebugModal(data) {
 
 
 /* ============================================================
-   Helpers
+   Status Polling for Processing Orders
    ============================================================ */
 
-function updatePendingCount() {
-    var table = document.getElementById('pendingOrdersTable');
-    if (!table) return;
-    var rows = table.querySelectorAll('tbody tr');
-    var count = rows.length;
-
-    // Update badge in header
-    var badge = table.closest('.card').querySelector('.card-header .badge.bg-warning');
-    if (badge) {
-        badge.textContent = count;
-        if (count === 0) badge.style.display = 'none';
+async function pollOrderStatus(orderId) {
+    try {
+        const res = await fetch('/api/orders/' + orderId + '/status');
+        if (!res.ok) return null;
+        return await res.json();
+    } catch (err) {
+        console.error('Status polling error:', err);
+        return null;
     }
+}
 
-    // Update bulk button
-    var bulkBtn = document.getElementById('btnStartAll');
-    if (bulkBtn && count === 0) {
-        bulkBtn.style.display = 'none';
+
+/* ============================================================
+   Column Count Updates
+   ============================================================ */
+
+function updateColumnCounts() {
+    // Count cards in each column
+    const pendingCount = document.querySelectorAll('#column-pending .kanban-card').length;
+    const processingCount = document.querySelectorAll('#column-processing .kanban-card').length;
+    const completedCount = document.querySelectorAll('#column-completed .kanban-card').length;
+    
+    // Update badges
+    const pendingBadge = document.getElementById('badge-pending');
+    const processingBadge = document.getElementById('badge-processing');
+    const completedBadge = document.getElementById('badge-completed');
+    
+    if (pendingBadge) pendingBadge.textContent = pendingCount;
+    if (processingBadge) processingBadge.textContent = processingCount;
+    if (completedBadge) completedBadge.textContent = completedCount;
+    
+    // Update stat cards
+    const statPending = document.getElementById('stat-pending');
+    const statProcessing = document.getElementById('stat-processing');
+    
+    if (statPending) statPending.textContent = pendingCount;
+    if (statProcessing) statProcessing.textContent = processingCount;
+    
+    // Hide "Start All" button if no pending orders
+    const btnStartAll = document.getElementById('btnStartAll');
+    if (btnStartAll) {
+        btnStartAll.style.display = pendingCount > 0 ? 'inline-block' : 'none';
     }
+    
+    // Show empty message in pending column if needed
+    const pendingColumn = document.getElementById('column-pending');
+    if (pendingColumn && pendingCount === 0) {
+        if (!pendingColumn.querySelector('.empty-column')) {
+            pendingColumn.innerHTML = `
+                <div class="text-center py-4 text-muted empty-column">
+                    <i class="bi bi-check-circle fs-2 d-block mb-2 text-success"></i>
+                    <p class="mb-0 small">Keine ausstehenden Aufträge</p>
+                </div>
+            `;
+        }
+    }
+}
+
+
+/* ============================================================
+   Format Helpers
+   ============================================================ */
+
+function formatTimestamp(isoString) {
+    if (!isoString) return '-';
+    const date = new Date(isoString);
+    return date.toLocaleString('de-DE', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+function formatCurrency(amount) {
+    if (amount == null) return '-';
+    return new Intl.NumberFormat('de-DE', {
+        style: 'currency',
+        currency: 'EUR'
+    }).format(amount);
 }

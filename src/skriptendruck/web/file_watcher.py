@@ -253,11 +253,19 @@ def _get_next_order_id(db: DatabaseService) -> int:
 
 
 def _is_file_known(db: DatabaseService, filename: str, filepath_str: str) -> bool:
-    """Prüft ob eine Datei bereits in der DB existiert (Duplikat-Check)."""
+    """Prüft ob eine Datei bereits in der DB existiert (Duplikat-Check).
+    
+    WICHTIG: Der Check basiert NUR auf dem vollständigen Dateipfad (original_filepath).
+    Das bedeutet:
+    - Verschiedene Benutzer können Dateien mit gleichem Namen hochladen
+      (da sie unterschiedliche Pfade haben)
+    - Duplikate werden nur innerhalb desselben Verzeichnispfads erkannt
+    """
     with db.SessionLocal() as session:
+        # Check nur auf Dateipfad - nicht auf Dateiname!
+        # So können verschiedene User Dateien mit gleichem Namen haben
         stmt = select(OrderRecord).where(
-            (OrderRecord.filename == filename)
-            & (OrderRecord.original_filepath == filepath_str)
+            OrderRecord.original_filepath == filepath_str
         )
         return session.scalar(stmt) is not None
 

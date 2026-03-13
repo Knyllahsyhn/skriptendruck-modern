@@ -325,6 +325,96 @@ async def delete_order(request: Request, order_id: int):
         return JSONResponse(status_code=500, content={"error": str(e)})
 
 
+@router.post("/orders/{order_id}/cancel")
+async def cancel_order(request: Request, order_id: int):
+    """Bricht einen Auftrag ab.
+    
+    Kann Aufträge im Status 'pending' oder 'processing' abbrechen.
+    Setzt den Status auf 'cancelled' und speichert einen Timestamp.
+    """
+    user, error = _require_auth(request)
+    if error:
+        return error
+
+    try:
+        db = _get_db()
+        with db.SessionLocal() as session:
+            stmt = select(OrderRecord).where(OrderRecord.order_id == order_id)
+            order = session.scalar(stmt)
+
+            if not order:
+                return JSONResponse(status_code=404, content={"error": "Auftrag nicht gefunden"})
+
+            # Nur pending und processing können abgebrochen werden
+            if order.status not in ("pending", "processing"):
+                return JSONResponse(
+                    status_code=400,
+                    content={
+                        "error": (
+                            f"Auftrag im Status '{order.status}' kann nicht abgebrochen werden. "
+                            f"Nur Aufträge mit Status 'pending' oder 'processing' können abgebrochen werden."
+                        )
+                    },
+                )
+
+            # Status auf cancelled setzen
+            previous_status = order.status
+            order.status = "cancelled"
+            order.error_message = f"Abgebrochen von {user['username']} (vorheriger Status: {previous_status})"
+            order.processed_at = datetime.now()
+            session.commit()
+
+            logger.info(f"Auftrag #{order_id} von {user['username']} abgebrochen (vorher: {previous_status})")
+            return JSONResponse(content={
+                "success": True, 
+                "message": f"Auftrag #{order_id} wurde abgebrochen",
+                "previous_status": previous_status
+            })
+
+    except Exception as e:
+        logger.error(f"Fehler beim Abbrechen von Auftrag #{order_id}: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
+@router.get("/orders/{order_id}/status")
+async def get_order_status(request: Request, order_id: int):
+    """Gibt den aktuellen Status eines Auftrags zurück.
+    
+    Nützlich für Polling/Live-Updates während der Verarbeitung.
+    """
+    user, error = _require_auth(request)
+    if error:
+        return error
+
+    try:
+        db = _get_db()
+        with db.SessionLocal() as session:
+            stmt = select(OrderRecord).where(OrderRecord.order_id == order_id)
+            order = session.scalar(stmt)
+
+            if not order:
+                return JSONResponse(status_code=404, content={"error": "Auftrag nicht gefunden"})
+
+            return JSONResponse(content={
+                "success": True,
+                "order_id": order.order_id,
+                "status": order.status,
+                "filename": order.filename,
+                "created_at": order.created_at.isoformat() if order.created_at else None,
+                "processed_at": order.processed_at.isoformat() if order.processed_at else None,
+                "page_count": order.page_count,
+                "total_price": float(order.total_price) if order.total_price else None,
+                "error_message": order.error_message,
+                "username": order.username,
+                "first_name": order.first_name,
+                "last_name": order.last_name,
+            })
+
+    except Exception as e:
+        logger.error(f"Fehler beim Abrufen des Status von Auftrag #{order_id}: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+
+
 @router.post("/scan")
 async def trigger_scan(request: Request):
     """Löst einen manuellen Scan des Auftragsordners aus.

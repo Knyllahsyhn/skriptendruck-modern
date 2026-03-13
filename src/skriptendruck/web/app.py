@@ -111,6 +111,7 @@ def create_app() -> FastAPI:
         "validated": ("Validiert", "info"),
         "processed": ("Verarbeitet", "success"),
         "printed": ("Gedruckt", "primary"),
+        "cancelled": ("Abgebrochen", "secondary"),
         "error_user_not_found": ("User fehlt", "danger"),
         "error_user_blocked": ("Blockiert", "danger"),
         "error_too_few_pages": ("Zu wenig S.", "danger"),

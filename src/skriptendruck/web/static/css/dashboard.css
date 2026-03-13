@@ -547,19 +547,34 @@ h1, h2, h3, h4, h5, h6 {
 /* ============================================================
    Adaptive Logo – Dark / Light Mode
    ============================================================ */
-/* In dark contexts (navbar, footer are always dark) → invert to white */
+/* Navbar logo - make it visible and properly sized */
 .fsmb-logo-adaptive {
-    filter: brightness(0) invert(1);
-    transition: filter 0.3s ease;
+    /* Remove harsh filter, use subtle drop-shadow instead */
+    filter: drop-shadow(0 0 1px rgba(255,255,255,0.3));
+    transition: filter 0.3s ease, transform 0.2s ease;
+    border-radius: 4px;
+    background: rgba(255,255,255,0.1);
+    padding: 2px;
 }
 
-/* In dark mode, ensure full opacity and clean white */
+/* On hover, add glow effect */
+.navbar-fsmb .navbar-brand:hover .fsmb-logo-adaptive {
+    filter: drop-shadow(0 0 4px rgba(255,255,255,0.5));
+    transform: scale(1.05);
+}
+
+/* Dark mode adjustments */
 [data-bs-theme="dark"] .fsmb-logo-adaptive {
-    filter: brightness(0) invert(1);
-    opacity: 1 !important;
+    filter: drop-shadow(0 0 2px rgba(255,255,255,0.4));
+    opacity: 0.95;
 }
 
-/* Footer logo: override opacity in dark mode for better visibility */
+/* Footer logo */
+.footer-fsmb .footer-logo {
+    filter: drop-shadow(0 0 1px rgba(255,255,255,0.2));
+    opacity: 0.9;
+}
+
 [data-bs-theme="dark"] .footer-fsmb .footer-logo {
     opacity: 1;
 }
@@ -599,4 +614,248 @@ h1, h2, h3, h4, h5, h6 {
 .form-control, .form-select, .table,
 .btn, .badge, .alert, .page-link {
     transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+
+
+
+/* ============================================================
+   Kanban Board Layout
+   ============================================================ */
+.kanban-column {
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+}
+
+.kanban-body {
+    flex: 1;
+    overflow-y: auto;
+    max-height: calc(100vh - 400px);
+    min-height: 300px;
+}
+
+/* Kanban Column Headers */
+.kanban-pending .card-header {
+    border-left: 4px solid var(--bs-warning);
+}
+
+.kanban-processing .card-header {
+    border-left: 4px solid var(--bs-info);
+}
+
+.kanban-completed .card-header {
+    border-left: 4px solid var(--bs-success);
+}
+
+/* Kanban Cards */
+.kanban-card {
+    background-color: var(--fsmb-card-bg);
+    border: 1px solid var(--fsmb-border-light);
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+    cursor: default;
+    display: flex;
+    flex-direction: column;
+}
+
+.kanban-card:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+.kanban-card.pending {
+    border-left: 3px solid var(--bs-warning);
+}
+
+.kanban-card.processing {
+    border-left: 3px solid var(--bs-info);
+    animation: pulse-border 2s infinite;
+}
+
+.kanban-card.completed {
+    border-left: 3px solid var(--bs-success);
+}
+
+.kanban-card.error {
+    border-left: 3px solid var(--bs-danger);
+    background-color: rgba(var(--bs-danger-rgb), 0.05);
+}
+
+.kanban-card.cancelled {
+    border-left: 3px solid var(--bs-secondary);
+    opacity: 0.7;
+}
+
+@keyframes pulse-border {
+    0%, 100% { border-left-color: var(--bs-info); }
+    50% { border-left-color: var(--bs-primary); }
+}
+
+/* Order Filename */
+.order-filename {
+    font-size: 0.9rem;
+    font-weight: 500;
+    word-break: break-word;
+    color: var(--fsmb-text);
+}
+
+/* Empty Column State */
+.empty-column {
+    opacity: 0.7;
+}
+
+/* Stat Cards with accent borders */
+.stat-card-pending {
+    border-left: 4px solid var(--bs-warning) !important;
+}
+
+.stat-card-processing {
+    border-left: 4px solid var(--bs-info) !important;
+}
+
+.stat-card-success {
+    border-left: 4px solid var(--bs-success) !important;
+}
+
+.stat-card-error {
+    border-left: 4px solid var(--bs-danger) !important;
+}
+
+
+/* ============================================================
+   Spinner / Loading Animations
+   ============================================================ */
+.spinner-icon {
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+
+
+/* ============================================================
+   Progress Steps (Modal)
+   ============================================================ */
+.progress-steps {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+}
+
+.progress-steps .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    position: relative;
+    opacity: 0.4;
+    transition: opacity 0.3s ease;
+}
+
+.progress-steps .step.active {
+    opacity: 1;
+}
+
+.progress-steps .step.completed {
+    opacity: 1;
+    color: var(--bs-success);
+}
+
+.progress-steps .step-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.progress-steps .step-label {
+    font-size: 0.7rem;
+    text-align: center;
+}
+
+.progress-steps .step.active .step-icon {
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+
+/* ============================================================
+   Progress Wrapper (Card inline)
+   ============================================================ */
+.progress-wrapper {
+    background-color: var(--fsmb-surface-hover);
+    border-radius: 0.25rem;
+    padding: 0.5rem;
+}
+
+.progress-status {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+}
+
+
+/* ============================================================
+   Card Transitions
+   ============================================================ */
+.order-card {
+    transition: all 0.3s ease;
+}
+
+.order-card.fade-out {
+    opacity: 0;
+    transform: translateX(100px);
+}
+
+.order-card.moving-to-processing {
+    animation: slide-right 0.5s ease forwards;
+}
+
+.order-card.moving-to-completed {
+    animation: slide-right 0.5s ease forwards;
+}
+
+@keyframes slide-right {
+    0% { transform: translateX(0); opacity: 1; }
+    100% { transform: translateX(50px); opacity: 0; }
+}
+
+
+/* ============================================================
+   Mobile Responsive - Kanban stacking
+   ============================================================ */
+@media (max-width: 991.98px) {
+    .kanban-body {
+        max-height: 300px;
+        min-height: 200px;
+    }
+    
+    .kanban-column {
+        min-height: auto;
+    }
+}
+
+@media (max-width: 576px) {
+    .kanban-card {
+        padding: 0.5rem;
+    }
+    
+    .order-filename {
+        font-size: 0.8rem;
+    }
+    
+    .progress-steps .step-label {
+        font-size: 0.6rem;
+    }
 }

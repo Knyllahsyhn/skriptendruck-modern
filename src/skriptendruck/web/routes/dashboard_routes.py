@@ -25,7 +25,7 @@ def _get_db() -> DatabaseService:
 
 @router.get("/", response_class=HTMLResponse)
 async def index(request: Request):
-    """Hauptseite / Dashboard-Übersicht."""
+    """Hauptseite / Dashboard-Übersicht mit 3-Spalten Kanban-Layout."""
     redirect = require_login(request)
     if redirect:
         return redirect
@@ -38,37 +38,61 @@ async def index(request: Request):
         
         with db.SessionLocal() as session:
             from ...database.models import OrderRecord
-            from sqlalchemy import select, func
+            from sqlalchemy import select, func, or_
             
-            # Ausstehende Aufträge (pending) – separate Sektion
+            # Spalte 1: Ausstehende Aufträge (pending)
             stmt_pending = select(OrderRecord).where(
                 OrderRecord.status == "pending"
             ).order_by(OrderRecord.created_at.asc())
             pending_orders_data = [_order_to_dict(o) for o in session.scalars(stmt_pending)]
-            
-            # Anzahl pending für Stats
             pending_count = len(pending_orders_data)
             
-            # Letzte 15 nicht-pending Aufträge
-            stmt_other = select(OrderRecord).where(
-                OrderRecord.status != "pending"
-            ).order_by(OrderRecord.created_at.desc()).limit(15)
-            recent_orders_data = [_order_to_dict(o) for o in session.scalars(stmt_other)]
+            # Spalte 2: In Verarbeitung (processing)
+            stmt_processing = select(OrderRecord).where(
+                OrderRecord.status == "processing"
+            ).order_by(OrderRecord.created_at.asc())
+            processing_orders_data = [_order_to_dict(o) for o in session.scalars(stmt_processing)]
+            processing_count = len(processing_orders_data)
+            
+            # Spalte 3: Abgeschlossen (processed, printed, error_*, cancelled)
+            # Zeige die letzten 20 abgeschlossenen Aufträge
+            completed_statuses = [
+                "processed", "printed", "validated", "cancelled",
+                "error_user_not_found", "error_user_blocked", 
+                "error_too_few_pages", "error_too_many_pages",
+                "error_password_protected", "error_invalid_filename", "error_unknown"
+            ]
+            stmt_completed = select(OrderRecord).where(
+                OrderRecord.status.in_(completed_statuses)
+            ).order_by(OrderRecord.processed_at.desc().nullslast(), 
+                      OrderRecord.created_at.desc()).limit(20)
+            completed_orders_data = [_order_to_dict(o) for o in session.scalars(stmt_completed)]
+            completed_count = len(completed_orders_data)
+            
     except Exception as e:
         logger.error(f"Fehler beim Laden der Dashboard-Daten: {e}")
         stats = {"total_orders": 0, "successful_orders": 0, "error_orders": 0, "total_revenue": 0.0}
         pending_orders_data = []
         pending_count = 0
-        recent_orders_data = []
+        processing_orders_data = []
+        processing_count = 0
+        completed_orders_data = []
+        completed_count = 0
     
     templates = request.app.state.templates
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "user": user,
         "stats": stats,
+        # Spalte 1: Ausstehend
         "pending_orders": pending_orders_data,
         "pending_count": pending_count,
-        "recent_orders": recent_orders_data,
+        # Spalte 2: In Verarbeitung
+        "processing_orders": processing_orders_data,
+        "processing_count": processing_count,
+        # Spalte 3: Abgeschlossen
+        "completed_orders": completed_orders_data,
+        "completed_count": completed_count,
     })
 
 
@@ -114,9 +138,11 @@ async def orders_page(
     # Status-Optionen für Filter
     status_options = [
         ("pending", "Ausstehend"),
+        ("processing", "In Verarbeitung"),
         ("validated", "Validiert"),
         ("processed", "Verarbeitet"),
         ("printed", "Gedruckt"),
+        ("cancelled", "Abgebrochen"),
         ("error_user_not_found", "Fehler: Benutzer nicht gefunden"),
         ("error_user_blocked", "Fehler: Benutzer blockiert"),
         ("error_too_few_pages", "Fehler: Zu wenig Seiten"),
